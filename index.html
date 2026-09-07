@@ -18,6 +18,7 @@
   * { margin:0; padding:0; box-sizing:border-box; -webkit-user-select:none; user-select:none; font-family:'Segoe UI', Roboto, sans-serif; }
   html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); }
   button { cursor:pointer; border:none; outline:none; font-family:inherit; }
+  button:disabled { opacity:0.5; cursor:not-allowed; }
   .hidden { display:none !important; }
 
   /* ---------- ЗАСТАВКА ---------- */
@@ -91,7 +92,7 @@
     width:100%; padding:12px; border-radius:12px; background:var(--accent); color:#000;
     font-weight:bold; margin-top:10px; transition:filter .2s;
   }
-  .btn-primary:active { filter:brightness(0.8); }
+  .btn-primary:active:not(:disabled) { filter:brightness(0.8); }
   .btn-secondary { background:#333; color:#fff; }
 
   /* TABS (для кейсов) */
@@ -150,13 +151,13 @@
   }
   .slot.filled { border-style:solid; border-color:var(--accent); background:#2a2a2a; }
 
-  /* CLICKER */
+  /* CLICKER - ИСПРАВЛЕНО: удалена невалидная строка active:scale(0.95) */
   .clicker-area { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
   .big-btn {
     width:180px; height:180px; border-radius:50%; background:radial-gradient(circle, #333, #000);
     border:4px solid var(--accent); box-shadow:0 0 30px var(--accent-glow);
     font-size:60px; display:flex; align-items:center; justify-content:center;
-    transition:transform .1s; active:scale(0.95);
+    transition:transform .1s, box-shadow .1s;
   }
   .big-btn:active { transform:scale(0.95); box-shadow:0 0 50px var(--accent-glow); }
   .click-info { margin-top:30px; font-size:18px; color:#aaa; }
@@ -341,7 +342,7 @@
 <script>
   /* ---------- ДАННЫЕ ИГРЫ ---------- */
   let balance = 1000; // Стартовые кнопки
-  let inventory = []; // {id, name, icon, price}
+  let inventory = []; // {id, name, icon, price, uid}
   
   // Категории и кейсы
   const caseCategories = {
@@ -359,7 +360,7 @@
     ],
     "Премиум": [
       { id: 'c9', name: "Золотой", price: 1000, items: [{n:"Слиток", i:"🥇", p:300}, {n:"Часы", i:"⌚", p:700}, {n:"Машина", i:"🚗", p:1500}, {n:"Дом", i:"🏠", p:3000}] },
-      { id: 'c10', name: "Платина", price: 1500, items: [{n:"Алмаз", i:"💎", p:400}, {n:"Рубин", i:"❤️‍", p:900}, {n:"Яхта", i:"⛵", p:2000}, {n:"Остров", i:"🏝️", p:4500}] },
+      { id: 'c10', name: "Платина", price: 1500, items: [{n:"Алмаз", i:"💎", p:400}, {n:"Рубин", i:"❤️", p:900}, {n:"Яхта", i:"⛵", p:2000}, {n:"Остров", i:"🏝️", p:4500}] },
       { id: 'c11', name: "VIP", price: 2000, items: [{n:"Вертолет", i:"🚁", p:600}, {n:"Самолет", i:"✈️", p:1200}, {n:"Космос", i:"🌌", p:2500}, {n:"Планета", i:"🪐", p:5500}] },
       { id: 'c12', name: "Элита", price: 2500, items: [{n:"Статуя", i:"🗿", p:700}, {n:"Картина", i:"🖼️", p:1400}, {n:"Замок", i:"🏰", p:3000}, {n:"Галактика", i:"🌠", p:7000}] }
     ],
@@ -384,6 +385,11 @@
   let craftSlots = { items: [], btns: 0 };
   let upgradeItem = null;
 
+  // Генератор уникальных ID
+  function generateUID() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
   /* ---------- СИСТЕМА ---------- */
   const $ = id => document.getElementById(id);
   
@@ -395,7 +401,8 @@
     const t = $('toast');
     t.innerText = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
+    clearTimeout(t._timeout);
+    t._timeout = setTimeout(() => t.classList.remove('show'), 2000);
   }
 
   function switchTab(tabId, btn) {
@@ -419,7 +426,6 @@
   function startGame() {
     if(splash.classList.contains('fade')) return;
     
-    // Звук играет ТОЛЬКО сейчас (по клику)
     splashAudio.volume = 1.0;
     splashAudio.play().catch(e => console.log("Audio play failed", e));
 
@@ -441,7 +447,6 @@
   $('clickBtn').addEventListener('click', () => {
     balance += 1;
     updateBalance();
-    // Визуальный эффект
     const btn = $('clickBtn');
     btn.style.transform = 'scale(0.95)';
     setTimeout(() => btn.style.transform = 'scale(1)', 50);
@@ -475,7 +480,6 @@
   }
 
   function openCaseModal(caseId) {
-    // Найти кейс
     for(let cat in caseCategories) {
       const found = caseCategories[cat].find(c => c.id === caseId);
       if(found) { currentCase = found; break; }
@@ -487,12 +491,10 @@
     $('caseResult').classList.add('hidden');
     setCaseCount(1);
     
-    // Подготовка рулетки (визуально)
     const track = $('rouletteTrack');
     track.style.transition = 'none';
     track.style.transform = 'translateX(0)';
     track.innerHTML = '';
-    // Генерируем длинную ленту для анимации
     for(let i=0; i<50; i++) {
       const item = currentCase.items[Math.floor(Math.random() * currentCase.items.length)];
       const div = document.createElement('div');
@@ -520,23 +522,16 @@
 
     $('caseControls').classList.add('hidden');
     
-    // Логика выигрыша
     wonItemsBuffer = [];
     for(let i=0; i<caseCount; i++) {
-      // Простая рандомизация (можно добавить веса)
       const win = currentCase.items[Math.floor(Math.random() * currentCase.items.length)];
-      wonItemsBuffer.push({...win}); // copy
+      wonItemsBuffer.push({...win});
     }
 
-    // Анимация
     const track = $('rouletteTrack');
-    // Добавляем выигрышные предметы в конец ленты, чтобы остановиться на них
-    // Для простоты анимации просто сдвигаем на фиксированное расстояние
     const itemWidth = 100;
     const stopPosition = (40 * itemWidth) - (track.parentElement.offsetWidth / 2) + (itemWidth/2);
     
-    // Пересобираем ленту, чтобы последний элемент был выигрышным (для одиночного открытия)
-    // Для мульти-открытия просто показываем список после
     if(caseCount === 1) {
         const winItem = wonItemsBuffer[0];
         const winDiv = document.createElement('div');
@@ -544,14 +539,12 @@
         winDiv.innerHTML = `<span>${winItem.i}</span><span style="font-size:10px; color:var(--accent)">${winItem.p}🔘</span>`;
         winDiv.style.border = "2px solid var(--accent)";
         track.appendChild(winDiv);
-        // Корректировка остановки
         const finalStop = (track.children.length - 1) * itemWidth - (track.parentElement.offsetWidth / 2) + (itemWidth/2);
         track.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0.1, 1)';
-        track.style.transform = `translateX(-${finalStop}px)`;
+        track.style.transform = `translateX(-${Math.max(0, finalStop)}px)`;
     } else {
-        // Для нескольких просто крутим долго
         track.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0.1, 1)';
-        track.style.transform = `translateX(-${stopPosition}px)`;
+        track.style.transform = `translateX(-${Math.max(0, stopPosition)}px)`;
     }
 
     setTimeout(() => {
@@ -573,12 +566,11 @@
       list.appendChild(div);
     });
 
-    // Сохраняем цену для продажи
     $('caseResult').dataset.totalPrice = totalWinPrice;
   }
 
   function sellWonItems() {
-    const price = parseInt($('caseResult').dataset.totalPrice);
+    const price = parseInt($('caseResult').dataset.totalPrice) || 0;
     balance += price;
     updateBalance();
     showToast(`Продано за ${price} кнопок!`);
@@ -587,7 +579,7 @@
 
   function keepWonItems() {
     wonItemsBuffer.forEach(item => {
-      inventory.push({...item, uid: Date.now() + Math.random()});
+      inventory.push({...item, uid: generateUID()});
     });
     showToast("Предметы в инвентаре!");
     closeModal('modal-case');
@@ -625,18 +617,23 @@
     showToast(`Продано: ${item.n}`);
   }
 
-  /* ---------- КРАФТ ---------- */
+  /* ---------- КРАФТ - ИСПРАВЛЕНА ЛОГИКА ---------- */
   function addToCraft(type) {
     if(type === 'item') {
       if(craftSlots.items.length >= 4) return showToast("Максимум 4 предмета");
-      // Открываем модалку выбора из инвентаря
+      if(inventory.length === 0) return showToast("Инвентарь пуст");
+      
       openSelectModal('Выберите предмет для крафта', inventory, (item, idx) => {
-        craftSlots.items.push({...item, invIndex: idx});
+        // ИСПРАВЛЕНО: удаляем предмет из инвентаря при добавлении в крафт
+        const removedItem = inventory.splice(idx, 1)[0];
+        craftSlots.items.push(removedItem);
         renderCraftSlots();
         closeModal('modal-select');
       });
     } else if(type === 'btn') {
-      // Добавляем фиксированную сумму кнопок (например, 100 за слот)
+      // ИСПРАВЛЕНО: добавлена проверка максимума слотов
+      if(craftSlots.btns >= 3) return showToast("Максимум 3 слота кнопок");
+      
       const cost = 100;
       if(balance < cost) return showToast("Нужно 100 кнопок за слот");
       balance -= cost;
@@ -652,14 +649,15 @@
     for(let i=0; i<4; i++) {
       const slot = document.createElement('div');
       if(craftSlots.items[i]) {
+        const currentItem = craftSlots.items[i];
         slot.className = 'slot filled';
-        slot.innerHTML = craftSlots.items[i].i;
+        slot.innerHTML = currentItem.i;
+        // ИСПРАВЛЕНО: при клике возвращаем предмет в инвентарь
         slot.onclick = () => { 
-            balance += craftSlots.items[i].p; // Возвращаем предмет? Нет, просто удаляем
-            // Логика возврата сложная, просто очистим слот
-            // Для простоты: клик удаляет
-            craftSlots.items.splice(i, 1);
-            renderCraftSlots();
+          inventory.push(currentItem);
+          const idx = craftSlots.items.indexOf(currentItem);
+          if(idx > -1) craftSlots.items.splice(idx, 1);
+          renderCraftSlots();
         };
       } else {
         slot.className = 'slot';
@@ -677,7 +675,7 @@
         slot.className = 'slot filled';
         slot.innerHTML = '🔘';
         slot.onclick = () => {
-            balance += 100; // Возврат
+            balance += 100;
             craftSlots.btns--;
             updateBalance();
             renderCraftSlots();
@@ -690,22 +688,21 @@
       bContainer.appendChild(slot);
     }
 
-    // Расчет стоимости (сумма предметов + кнопки)
     let totalVal = craftSlots.items.reduce((sum, it) => sum + it.p, 0) + (craftSlots.btns * 100);
     $('craftCost').innerText = totalVal + " 🔘";
   }
 
   function clearCraft() {
-    // Возвращаем предметы в инвентарь? Или просто теряем? Пусть теряются для хардкора, или возвращаются.
-    // Вернем предметы в инвентарь
+    // ИСПРАВЛЕНО: возвращаем предметы в инвентарь и деньги за кнопки
     craftSlots.items.forEach(it => {
-        // Мы удалили их из инвентаря при добавлении? Нет, мы копировали.
-        // Значит они дублировались. Нужно удалять из инвентаря при добавлении.
-        // Исправление: при addToCraft мы не удаляли. Сделаем вид, что они "использованы".
-        // Для простоты прототипа: предметы в слотах считаются "потраченными".
+      inventory.push(it);
     });
+    balance += craftSlots.btns * 100;
+    updateBalance();
+    
     craftSlots = { items: [], btns: 0 };
     renderCraftSlots();
+    showToast("Крафт очищен");
   }
 
   function runCraft() {
@@ -713,23 +710,15 @@
     
     const totalVal = craftSlots.items.reduce((sum, it) => sum + it.p, 0) + (craftSlots.btns * 100);
     
-    // Шанс и результат
-    // Результат может быть от 0 до 200% от вложений
     const multiplier = Math.random() * 2; 
-    const resultPrice = Math.floor(totalVal * multiplier);
+    const resultPrice = Math.max(1, Math.floor(totalVal * multiplier));
     
-    // Удаляем предметы из инвентаря (теперь точно)
-    craftSlots.items.forEach(craftItem => {
-        const idx = inventory.findIndex(invItem => invItem.uid === craftItem.uid);
-        if(idx > -1) inventory.splice(idx, 1);
-    });
-
-    // Генерируем "новый" предмет
+    // ИСПРАВЛЕНО: предметы уже удалены из инвентаря при добавлении, просто очищаем слоты
     const newItem = {
-        n: "Скрафченный лут",
-        i: "✨",
-        p: resultPrice,
-        uid: Date.now()
+      n: "Скрафченный лут",
+      i: "✨",
+      p: resultPrice,
+      uid: generateUID()
     };
     
     inventory.push(newItem);
@@ -755,10 +744,7 @@
   function calculateUpgradeChance() {
     if(!upgradeItem) return;
     const mult = parseFloat($('multiplierSelect').value);
-    // Формула шанса: 100 / mult (примерно), но уменьшаем от цены (чем дороже, тем сложнее, но тут упростим)
-    // Базовый шанс 50% для x2.
     let chance = 100 / mult; 
-    // Небольшой рандом для реалистичности интерфейса
     chance = Math.min(95, Math.max(1, chance)); 
     
     $('upgradeChance').innerText = Math.floor(chance) + '%';
@@ -766,7 +752,6 @@
     const targetPrice = Math.floor(upgradeItem.p * mult);
     $('upgradeTarget').innerText = `Цель: ${targetPrice} 🔘 (x${mult})`;
     
-    // Сброс анимации
     $('upgradeProgress').style.transform = `rotate(0deg)`;
   }
 
@@ -781,14 +766,12 @@
     const btn = $('upgradeBtn');
     btn.disabled = true;
     
-    // Анимация круга
     const progress = $('upgradeProgress');
-    const rotation = isWin ? 360 * 5 + 180 : 360 * 2 + (Math.random() * 300); // Крутим много
+    const rotation = isWin ? 360 * 5 + 180 : 360 * 2 + (Math.random() * 300);
     progress.style.transition = 'transform 2s cubic-bezier(0.2, 0.8, 0.2, 1)';
     progress.style.transform = `rotate(${rotation}deg)`;
     
     setTimeout(() => {
-      // Удаляем старый предмет
       const idx = inventory.findIndex(i => i.uid === upgradeItem.uid);
       if(idx > -1) inventory.splice(idx, 1);
       
@@ -798,7 +781,7 @@
             n: upgradeItem.n + " (UP)",
             i: upgradeItem.i,
             p: newPrice,
-            uid: Date.now()
+            uid: generateUID()
         };
         inventory.push(newItem);
         showToast(`УСПЕХ! Новый предмет: ${newPrice} 🔘`);
@@ -809,9 +792,8 @@
       }
       
       upgradeItem = null;
-      btn.disabled = true; // Ждем выбора нового
+      btn.disabled = true;
       
-      // Сброс через время
       setTimeout(() => {
          progress.style.transition = 'none';
          progress.style.transform = `rotate(0deg)`;
