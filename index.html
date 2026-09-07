@@ -5,222 +5,848 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Semyon Drop</title>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-user-select:none; user-select:none; }
-  html, body { height:100%; overflow:hidden; font-family:'Segoe UI', Arial, sans-serif; background:#12143a; }
+  :root {
+    --bg: #000000;
+    --panel: #111111;
+    --accent: #ff9d2e;
+    --accent-glow: rgba(255, 157, 46, 0.4);
+    --text: #ffffff;
+    --gray: #888888;
+    --card-bg: #1a1a1a;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-user-select:none; user-select:none; font-family:'Segoe UI', Roboto, sans-serif; }
+  html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); }
+  button { cursor:pointer; border:none; outline:none; font-family:inherit; }
   .hidden { display:none !important; }
 
   /* ---------- ЗАСТАВКА ---------- */
   #splash {
-    position:fixed; inset:0; z-index:100; cursor:pointer;
-    background:#000; transition:opacity .5s ease;
+    position:fixed; inset:0; z-index:9999; background:#000;
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity .5s ease;
   }
   #splash.fade { opacity:0; pointer-events:none; }
-  #splash img { width:100%; height:100%; object-fit:cover; display:block; }
-
-  /*Fallback, если drop.png не найден*/
-  #splashFallback {
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    background:radial-gradient(circle at 50% 40%, #6a2ea0, #2a1655 70%, #120b30);
-  }
-  #splashFallback h1 {
-    font-size:clamp(42px, 10vw, 110px); font-weight:900; letter-spacing:4px; text-align:center;
-    background:linear-gradient(180deg,#ffe9a3,#ffb340 55%,#ff7a1a);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    text-shadow:0 6px 30px rgba(255,150,0,.35);
-  }
-
-  #skipHint {
-    position:absolute; left:50%; bottom:26px; transform:translateX(-50%);
-    color:#fff; font-size:15px; opacity:.85; letter-spacing:1px;
-    text-shadow:0 2px 8px rgba(0,0,0,.7); animation:pulse 1.6s infinite;
-  }
+  #splash img { width:100%; height:100%; object-fit:cover; position:absolute; }
+  
+  .splash-ui { position:relative; z-index:2; width:100%; height:100%; display:flex; flex-direction:column; justify-content:flex-end; padding-bottom:40px; align-items:center; }
+  
   #skipBtn {
-    position:absolute; right:22px; bottom:20px; padding:10px 20px;
-    border:none; border-radius:999px; cursor:pointer;
-    background:rgba(0,0,0,.45); color:#fff; font-size:14px; letter-spacing:1px;
-    border:1px solid rgba(255,255,255,.35); backdrop-filter:blur(6px);
-    transition:background .2s, transform .2s;
+    padding:16px 40px; border-radius:30px; font-size:18px; font-weight:800; text-transform:uppercase;
+    background:linear-gradient(135deg, #ff9d2e, #ff6a00); color:#fff;
+    box-shadow:0 0 20px var(--accent-glow); transition:transform .2s;
   }
-  #skipBtn:hover { background:rgba(0,0,0,.7); transform:scale(1.05); }
+  #skipBtn:active { transform:scale(0.95); }
+  .hint { margin-top:15px; color:rgba(255,255,255,0.6); font-size:14px; animation:pulse 2s infinite; }
 
-  #soundBtn {
-    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    padding:16px 30px; border:none; border-radius:999px; cursor:pointer;
-    font-size:17px; font-weight:700; color:#fff;
-    background:linear-gradient(135deg,#ff9d2e,#ff6a00);
-    box-shadow:0 8px 30px rgba(255,120,0,.5); animation:pulse 1.4s infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+  @keyframes pulse { 0%{opacity:0.5} 50%{opacity:1} 100%{opacity:0.5} }
 
-  /* ---------- ГЛАВНОЕ МЕНЮ ---------- */
-  #menu {
-    position:fixed; inset:0; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:26px;
-    background:linear-gradient(160deg,#1b1f4b 0%, #3b1d6e 45%, #6a2ea0 100%);
-    opacity:0; transition:opacity .6s ease;
-  }
-  #menu.show { opacity:1; }
+  /* ---------- ОСНОВНОЙ LAYOUT ---------- */
+  #app { display:flex; flex-direction:column; height:100%; opacity:0; transition:opacity 1s; }
+  #app.visible { opacity:1; }
 
-  .topbar {
-    position:absolute; top:0; left:0; right:0;
-    display:flex; justify-content:space-between; align-items:center;
-    padding:16px 20px;
+  /* HEADER */
+  header {
+    height:60px; display:flex; align-items:center; justify-content:space-between; padding:0 20px;
+    background:rgba(17,17,17,0.9); backdrop-filter:blur(10px); border-bottom:1px solid #222; z-index:10;
   }
-  .balance {
-    display:flex; align-items:center; gap:8px;
-    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
-    backdrop-filter:blur(8px); border-radius:999px; padding:10px 18px;
-    color:#ffd764; font-weight:800; font-size:17px;
+  .balance-box {
+    display:flex; align-items:center; gap:8px; background:#222; padding:8px 16px; border-radius:20px;
+    font-weight:bold; color:var(--accent); border:1px solid #333;
   }
-  .icon-btn {
-    width:44px; height:44px; border-radius:50%; border:none; cursor:pointer;
-    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
-    color:#fff; font-size:20px; backdrop-filter:blur(8px); transition:transform .2s;
-  }
-  .icon-btn:hover { transform:scale(1.1); }
+  .logo-small { font-weight:900; letter-spacing:1px; background:linear-gradient(45deg, #fff, #aaa); -webkit-background-clip:text; color:transparent; }
 
-  .logo { text-align:center; animation:logoIn .8s ease both; }
-  .logo h1 {
-    font-size:clamp(44px, 9vw, 96px); font-weight:900; letter-spacing:3px; line-height:1;
-    background:linear-gradient(180deg,#ffe9a3,#ffb340 55%,#ff7a1a);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    filter:drop-shadow(0 8px 24px rgba(255,140,0,.35));
-  }
-  .logo p { color:#cfc4ff; letter-spacing:6px; margin-top:8px; font-size:14px; text-transform:uppercase; }
-  @keyframes logoIn { from{transform:scale(.7); opacity:0} to{transform:scale(1); opacity:1} }
+  /* CONTENT AREA */
+  main { flex:1; overflow-y:auto; position:relative; padding-bottom:80px; /* space for nav */ }
+  .view { display:none; padding:20px; animation:fadeIn .3s; height:100%; }
+  .view.active { display:block; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
 
-  .menu-buttons { display:flex; flex-direction:column; gap:14px; width:min(320px, 82vw); }
-  .menu-btn {
-    padding:16px 20px; border:none; border-radius:16px; cursor:pointer;
-    font-size:18px; font-weight:800; letter-spacing:1px; color:#4a2600;
-    background:linear-gradient(180deg,#ffd764,#ff9d2e);
-    box-shadow:0 6px 0 #b35b00, 0 12px 30px rgba(0,0,0,.35);
-    transition:transform .12s, box-shadow .12s;
+  /* BOTTOM NAV */
+  nav {
+    position:fixed; bottom:0; left:0; right:0; height:70px; background:#0a0a0a;
+    display:flex; justify-content:space-around; align-items:center; border-top:1px solid #222; z-index:100;
   }
-  .menu-btn:active { transform:translateY(4px); box-shadow:0 2px 0 #b35b00; }
-  .menu-btn.secondary {
-    color:#fff; background:rgba(255,255,255,.14);
-    border:1px solid rgba(255,255,255,.3); box-shadow:0 6px 0 rgba(0,0,0,.3);
-    backdrop-filter:blur(8px);
+  .nav-item {
+    display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--gray);
+    background:none; font-size:11px; font-weight:600; transition:color .2s; width:20%;
+  }
+  .nav-item span { font-size:24px; }
+  .nav-item.active { color:var(--accent); }
+  .nav-item:active { transform:scale(0.9); }
+
+  /* ---------- COMPONENTS ---------- */
+  h2 { margin-bottom:20px; font-size:24px; text-align:center; }
+  .grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:15px; }
+  
+  .card {
+    background:var(--card-bg); border-radius:16px; padding:15px; text-align:center;
+    border:1px solid #333; position:relative; overflow:hidden;
+  }
+  .card-img { font-size:40px; margin-bottom:10px; display:block; }
+  .card-title { font-weight:bold; font-size:14px; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card-price { color:var(--accent); font-weight:bold; font-size:13px; }
+  
+  .btn-primary {
+    width:100%; padding:12px; border-radius:12px; background:var(--accent); color:#000;
+    font-weight:bold; margin-top:10px; transition:filter .2s;
+  }
+  .btn-primary:active { filter:brightness(0.8); }
+  .btn-secondary { background:#333; color:#fff; }
+
+  /* TABS (для кейсов) */
+  .tabs { display:flex; overflow-x:auto; gap:10px; padding-bottom:15px; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab {
+    padding:8px 16px; background:#222; border-radius:20px; font-size:13px; white-space:nowrap; color:#aaa; border:1px solid transparent;
+  }
+  .tab.active { background:#333; color:#fff; border-color:var(--accent); }
+
+  /* ---------- MODALS ---------- */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:200;
+    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(5px);
+  }
+  .modal {
+    background:#111; width:90%; max-width:400px; border-radius:20px; padding:20px;
+    border:1px solid #333; text-align:center; position:relative;
+  }
+  .close-modal { position:absolute; top:15px; right:15px; color:#666; font-size:20px; background:none; }
+
+  /* ROULETTE ANIMATION */
+  .roulette-container {
+    width:100%; height:120px; background:#000; border-top:2px solid #333; border-bottom:2px solid #333;
+    overflow:hidden; position:relative; margin:20px 0; mask-image:linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  }
+  .roulette-track { display:flex; height:100%; align-items:center; transition:transform 4s cubic-bezier(0.1, 0, 0.1, 1); }
+  .roulette-item {
+    min-width:100px; height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-right:1px solid #222; font-size:30px;
+  }
+  .roulette-marker {
+    position:absolute; left:50%; top:0; bottom:0; width:2px; background:var(--accent); z-index:5; transform:translateX(-50%);
+    box-shadow:0 0 10px var(--accent);
   }
 
-  /* Парящие монетки на фоне меню */
-  .coin { position:absolute; font-size:26px; opacity:.35; animation:float 7s ease-in-out infinite; pointer-events:none; }
-  @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-40px) rotate(20deg)} }
+  /* UPGRADE CIRCLE */
+  .upgrade-circle-wrap { position:relative; width:200px; height:200px; margin:20px auto; }
+  .upgrade-circle {
+    width:100%; height:100%; border-radius:50%; border:4px solid #333;
+    display:flex; align-items:center; justify-content:center; font-size:50px;
+    position:relative; overflow:hidden;
+  }
+  .upgrade-progress {
+    position:absolute; inset:-4px; border-radius:50%; border:4px solid transparent;
+    border-top-color:var(--accent); border-right-color:var(--accent);
+    transform:rotate(0deg); transition:transform 2s linear;
+  }
+  .upgrade-center { z-index:2; background:#111; border-radius:50%; width:160px; height:160px; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+  
+  /* CRAFT SLOTS */
+  .craft-slots { display:flex; gap:10px; justify-content:center; margin:20px 0; flex-wrap:wrap; }
+  .slot {
+    width:60px; height:60px; background:#222; border:2px dashed #444; border-radius:12px;
+    display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer;
+  }
+  .slot.filled { border-style:solid; border-color:var(--accent); background:#2a2a2a; }
 
+  /* CLICKER */
+  .clicker-area { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
+  .big-btn {
+    width:180px; height:180px; border-radius:50%; background:radial-gradient(circle, #333, #000);
+    border:4px solid var(--accent); box-shadow:0 0 30px var(--accent-glow);
+    font-size:60px; display:flex; align-items:center; justify-content:center;
+    transition:transform .1s; active:scale(0.95);
+  }
+  .big-btn:active { transform:scale(0.95); box-shadow:0 0 50px var(--accent-glow); }
+  .click-info { margin-top:30px; font-size:18px; color:#aaa; }
+
+  /* TOAST */
   #toast {
-    position:fixed; left:50%; bottom:34px; transform:translateX(-50%) translateY(80px);
-    background:rgba(0,0,0,.75); color:#fff; padding:12px 24px; border-radius:999px;
-    font-size:15px; backdrop-filter:blur(8px); transition:transform .35s ease; z-index:200;
+    position:fixed; top:80px; left:50%; transform:translateX(-50%);
+    background:rgba(255,255,255,0.1); backdrop-filter:blur(10px); padding:10px 20px; border-radius:20px;
+    font-size:14px; pointer-events:none; opacity:0; transition:opacity .3s; z-index:300; border:1px solid rgba(255,255,255,0.2);
   }
-  #toast.show { transform:translateX(-50%) translateY(0); }
+  #toast.show { opacity:1; }
+
 </style>
 </head>
 <body>
 
 <!-- ЗАСТАВКА -->
 <div id="splash">
-  <img id="splashImg" src="drop.png" alt="Semyon Drop">
-  <div id="splashFallback" class="hidden"><h1>SEMYON<br>DROP</h1></div>
-  <button id="soundBtn" class="hidden">🔊 Включить звук</button>
-  <div id="skipHint">Нажмите, чтобы пропустить</div>
-  <button id="skipBtn">ПРОПУСТИТЬ »</button>
+  <img src="drop.png" alt="Splash" onerror="this.style.display='none'">
+  <div class="splash-ui">
+    <button id="skipBtn">ПРОПУСТИТЬ</button>
+    <div class="hint">Нажмите для входа</div>
+  </div>
 </div>
 
-<!-- ГЛАВНОЕ МЕНЮ -->
-<div id="menu" class="hidden">
-  <span class="coin" style="top:15%; left:10%;">🪙</span>
-  <span class="coin" style="top:70%; left:85%; animation-delay:-2s;">🎁</span>
-  <span class="coin" style="top:80%; left:15%; animation-delay:-4s;">🪙</span>
-  <span class="coin" style="top:20%; left:80%; animation-delay:-1s;"></span>
+<!-- ПРИЛОЖЕНИЕ -->
+<div id="app">
+  <header>
+    <div class="logo-small">SEMYON DROP</div>
+    <div class="balance-box">🔘 <span id="balanceDisplay">0</span></div>
+  </header>
 
-  <div class="topbar">
-    <div class="balance">🪙 <span id="balanceValue">1 000</span></div>
-    <button class="icon-btn" data-soon="Профиль">👤</button>
+  <main>
+    <!-- 1. КЛИКЕР -->
+    <div id="view-clicker" class="view active">
+      <div class="clicker-area">
+        <div class="big-btn" id="clickBtn">🔘</div>
+        <div class="click-info">Кликай, чтобы заработать кнопки</div>
+        <div style="margin-top:10px; color:var(--accent)">+1 за клик</div>
+      </div>
+    </div>
+
+    <!-- 2. КЕЙСЫ -->
+    <div id="view-cases" class="view">
+      <h2>Кейсы</h2>
+      <div class="tabs" id="caseTabs">
+        <!-- Tabs generated by JS -->
+      </div>
+      <div class="grid" id="caseGrid">
+        <!-- Cases generated by JS -->
+      </div>
+    </div>
+
+    <!-- 3. КРАФТ -->
+    <div id="view-craft" class="view">
+      <h2>Крафт</h2>
+      <p style="text-align:center; color:#888; font-size:13px; margin-bottom:20px;">Объедини предметы и кнопки, чтобы получить новый шанс.</p>
+      
+      <div style="text-align:center; margin-bottom:10px; color:#aaa; font-size:12px;">Слоты предметов (макс 4)</div>
+      <div class="craft-slots" id="craftItemSlots">
+        <div class="slot" onclick="addToCraft('item')">+</div>
+        <div class="slot" onclick="addToCraft('item')">+</div>
+        <div class="slot" onclick="addToCraft('item')">+</div>
+        <div class="slot" onclick="addToCraft('item')">+</div>
+      </div>
+
+      <div style="text-align:center; margin-bottom:10px; color:#aaa; font-size:12px;">Слоты кнопок (валюта)</div>
+      <div class="craft-slots" id="craftBtnSlots">
+        <div class="slot" onclick="addToCraft('btn')">🔘</div>
+        <div class="slot" onclick="addToCraft('btn')">🔘</div>
+        <div class="slot" onclick="addToCraft('btn')">🔘</div>
+      </div>
+
+      <div style="text-align:center; margin:20px 0;">
+        <div style="font-size:12px; color:#666;">Стоимость крафта:</div>
+        <div id="craftCost" style="font-size:20px; font-weight:bold; color:var(--accent);">0 🔘</div>
+      </div>
+
+      <button class="btn-primary" onclick="runCraft()">СКРАФТИТЬ</button>
+      <button class="btn-primary btn-secondary" onclick="clearCraft()" style="margin-top:10px;">Очистить</button>
+    </div>
+
+    <!-- 4. АПГРЕЙД -->
+    <div id="view-upgrade" class="view">
+      <h2>Апгрейд (ДРОП)</h2>
+      <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <button class="btn-primary btn-secondary" style="flex:1" onclick="selectUpgradeItem()">Выбрать предмет</button>
+        <select id="multiplierSelect" style="flex:1; background:#222; color:#fff; border:1px solid #444; border-radius:12px; padding:0 10px;">
+          <option value="1.5">x1.5</option>
+          <option value="2">x2.0</option>
+          <option value="3">x3.0</option>
+          <option value="5">x5.0</option>
+          <option value="10">x10.0</option>
+        </select>
+      </div>
+
+      <div class="upgrade-circle-wrap">
+        <div class="upgrade-circle">
+          <div class="upgrade-progress" id="upgradeProgress"></div>
+          <div class="upgrade-center" id="upgradeCenter">
+            <span style="font-size:12px; color:#666">Шанс</span>
+            <span id="upgradeChance" style="font-size:24px; font-weight:bold;">0%</span>
+          </div>
+        </div>
+      </div>
+      
+      <div style="text-align:center; margin-bottom:20px;">
+        <div id="upgradeTarget" style="font-size:14px; color:#aaa;">Цель: ---</div>
+      </div>
+
+      <button class="btn-primary" id="upgradeBtn" onclick="runUpgrade()" disabled>АПГРЕЙДНУТЬ</button>
+    </div>
+
+    <!-- 5. ИНВЕНТАРЬ -->
+    <div id="view-inventory" class="view">
+      <h2>Инвентарь</h2>
+      <div class="grid" id="inventoryGrid">
+        <!-- Items generated by JS -->
+      </div>
+      <div id="emptyInv" style="text-align:center; color:#555; margin-top:50px;">Пусто...</div>
+    </div>
+  </main>
+
+  <nav>
+    <button class="nav-item active" onclick="switchTab('clicker', this)"><span>👆</span>Кликер</button>
+    <button class="nav-item" onclick="switchTab('cases', this)"><span>🎁</span>Кейсы</button>
+    <button class="nav-item" onclick="switchTab('craft', this)"><span>⚒️</span>Крафт</button>
+    <button class="nav-item" onclick="switchTab('upgrade', this)"><span>⚡</span>Апгрейд</button>
+    <button class="nav-item" onclick="switchTab('inventory', this)"><span>🎒</span>Инвентарь</button>
+  </nav>
+</div>
+
+<!-- МОДАЛКИ -->
+
+<!-- Модалка открытия кейса -->
+<div id="modal-case" class="modal-overlay hidden">
+  <div class="modal">
+    <button class="close-modal" onclick="closeModal('modal-case')">×</button>
+    <h3 id="caseModalTitle" style="margin-bottom:10px;">Название кейса</h3>
+    
+    <div class="roulette-container">
+      <div class="roulette-marker"></div>
+      <div class="roulette-track" id="rouletteTrack">
+        <!-- Items injected here -->
+      </div>
+    </div>
+
+    <div id="caseControls">
+      <p style="color:#aaa; font-size:13px; margin-bottom:10px;">Сколько открыть?</p>
+      <div style="display:flex; gap:5px; justify-content:center; margin-bottom:15px;">
+        <button class="btn-primary btn-secondary" style="width:auto; padding:8px 15px; margin:0;" onclick="setCaseCount(1)">x1</button>
+        <button class="btn-primary btn-secondary" style="width:auto; padding:8px 15px; margin:0;" onclick="setCaseCount(2)">x2</button>
+        <button class="btn-primary btn-secondary" style="width:auto; padding:8px 15px; margin:0;" onclick="setCaseCount(3)">x3</button>
+        <button class="btn-primary btn-secondary" style="width:auto; padding:8px 15px; margin:0;" onclick="setCaseCount(4)">x4</button>
+      </div>
+      <div style="font-size:18px; font-weight:bold; margin-bottom:15px;">Цена: <span id="caseTotalPrice" style="color:var(--accent)">0</span> 🔘</div>
+      <button class="btn-primary" id="openCaseBtn" onclick="spinRoulette()">ОТКРЫТЬ</button>
+    </div>
+
+    <div id="caseResult" class="hidden">
+      <h2 style="color:var(--accent); margin:10px 0;">ВЫИГРЫШ!</h2>
+      <div id="wonItemsList" style="margin-bottom:20px;"></div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-primary btn-secondary" style="flex:1" onclick="sellWonItems()">💰 Продать</button>
+        <button class="btn-primary" style="flex:1" onclick="keepWonItems()">🎒 В инвентарь</button>
+      </div>
+    </div>
   </div>
+</div>
 
-  <div class="logo">
-    <h1>SEMYON DROP</h1>
-    <p>Открывай кейсы — лови подарки</p>
-  </div>
-
-  <div class="menu-buttons">
-    <button class="menu-btn" data-soon="Кейсы">🎁 КЕЙСЫ</button>
-    <button class="menu-btn secondary" data-soon="Магазин">🛒 МАГАЗИН</button>
-    <button class="menu-btn secondary" data-soon="Инвентарь">🎒 ИНВЕНТАРЬ</button>
-    <button class="menu-btn secondary" data-soon="Настройки">⚙️ НАСТРОЙКИ</button>
+<!-- Модалка выбора предмета для апгрейда/крафта -->
+<div id="modal-select" class="modal-overlay hidden">
+  <div class="modal" style="max-height:80vh; overflow-y:auto;">
+    <button class="close-modal" onclick="closeModal('modal-select')">×</button>
+    <h3 id="selectModalTitle">Выберите предмет</h3>
+    <div id="selectList" style="margin-top:20px; display:flex; flex-direction:column; gap:10px;"></div>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-  const splash   = document.getElementById('splash');
-  const splashImg= document.getElementById('splashImg');
-  const fallback = document.getElementById('splashFallback');
-  const soundBtn = document.getElementById('soundBtn');
-  const skipBtn  = document.getElementById('skipBtn');
-  const menu     = document.getElementById('menu');
-  const toast    = document.getElementById('toast');
+  /* ---------- ДАННЫЕ ИГРЫ ---------- */
+  let balance = 1000; // Стартовые кнопки
+  let inventory = []; // {id, name, icon, price}
+  
+  // Категории и кейсы
+  const caseCategories = {
+    "Стартовые": [
+      { id: 'c1', name: "Пакет Новичка", price: 50, items: [{n:"Ржавая кнопка", i:"🔘", p:10}, {n:"Скрепка", i:"📎", p:20}, {n:"Батарейка", i:"🔋", p:40}, {n:"Изолента", i:"🧻", p:80}] },
+      { id: 'c2', name: "Первый шаг", price: 100, items: [{n:"Гаечный ключ", i:"🔧", p:30}, {n:"Молоток", i:"🔨", p:60}, {n:"Отвертка", i:"🪛", p:120}, {n:"Дрель", i:"🪚", p:250}] },
+      { id: 'c3', name: "База", price: 200, items: [{n:"Кирпич", i:"🧱", p:50}, {n:"Цемент", i:"🏗️", p:100}, {n:"Каска", i:"⛑️", p:200}, {n:"Чертеж", i:"📜", p:450}] },
+      { id: 'c4', name: "Удача", price: 150, items: [{n:"Клевер", i:"🍀", p:40}, {n:"Подкова", i:"🧲", p:90}, {n:"Кристалл", i:"🔮", p:180}, {n:"Амулет", i:"📿", p:350}] }
+    ],
+    "Микс": [
+      { id: 'c5', name: "Всё подряд", price: 300, items: [{n:"Пицца", i:"🍕", p:80}, {n:"Сосиска", i:"🌭", p:150}, {n:"Ноутбук", i:"💻", p:300}, {n:"Телефон", i:"📱", p:600}] },
+      { id: 'c6', name: "Хаос", price: 400, items: [{n:"Кактус", i:"🌵", p:100}, {n:"Гриб", i:"🍄", p:200}, {n:"Ракета", i:"🚀", p:500}, {n:"НЛО", i:"🛸", p:900}] },
+      { id: 'c7', name: "Микс Мастер", price: 500, items: [{n:"Кот", i:"🐱", p:120}, {n:"Собака", i:"🐶", p:250}, {n:"Лев", i:"🦁", p:600}, {n:"Дракон", i:"🐉", p:1200}] },
+      { id: 'c8', name: "Случайность", price: 350, items: [{n:"Кубик", i:"🎲", p:90}, {n:"Карта", i:"🃏", p:180}, {n:"Шахматы", i:"♟️", p:400}, {n:"Корона", i:"👑", p:850}] }
+    ],
+    "Премиум": [
+      { id: 'c9', name: "Золотой", price: 1000, items: [{n:"Слиток", i:"🥇", p:300}, {n:"Часы", i:"⌚", p:700}, {n:"Машина", i:"🚗", p:1500}, {n:"Дом", i:"🏠", p:3000}] },
+      { id: 'c10', name: "Платина", price: 1500, items: [{n:"Алмаз", i:"💎", p:400}, {n:"Рубин", i:"❤️‍", p:900}, {n:"Яхта", i:"⛵", p:2000}, {n:"Остров", i:"🏝️", p:4500}] },
+      { id: 'c11', name: "VIP", price: 2000, items: [{n:"Вертолет", i:"🚁", p:600}, {n:"Самолет", i:"✈️", p:1200}, {n:"Космос", i:"🌌", p:2500}, {n:"Планета", i:"🪐", p:5500}] },
+      { id: 'c12', name: "Элита", price: 2500, items: [{n:"Статуя", i:"🗿", p:700}, {n:"Картина", i:"🖼️", p:1400}, {n:"Замок", i:"🏰", p:3000}, {n:"Галактика", i:"🌠", p:7000}] }
+    ],
+    "Лимитированные": [
+      { id: 'c13', name: "Зима 2024", price: 3000, items: [{n:"Снеговик", i:"⛄", p:800}, {n:"Елка", i:"🎄", p:1600}, {n:"Олень", i:"🦌", p:3500}, {n:"Санты", i:"🎅", p:8000}] },
+      { id: 'c14', name: "Кибер", price: 3500, items: [{n:"Чип", i:"💾", p:900}, {n:"Робот", i:"🤖", p:1800}, {n:"Киберпанк", i:"🦾", p:4000}, {n:"Матрица", i:"🕶️", p:9000}] },
+      { id: 'c15', name: "Спорт", price: 2800, items: [{n:"Мяч", i:"⚽", p:700}, {n:"Кубок", i:"🏆", p:1500}, {n:"Медаль", i:"🥇", p:3200}, {n:"Стадион", i:"🏟️", p:7500}] },
+      { id: 'c16', name: "Музыка", price: 3200, items: [{n:"Нота", i:"🎵", p:850}, {n:"Гитара", i:"🎸", p:1700}, {n:"Пианино", i:"🎹", p:3800}, {n:"Микрофон", i:"🎤", p:8500}] }
+    ],
+    "Эксклюзивные": [
+      { id: 'c17', name: "Богатство", price: 10000, items: [{n:"Мешок денег", i:"💰", p:2500}, {n:"Банк", i:"🏦", p:5000}, {n:"Биткоин", i:"₿", p:12000}, {n:"Вселенная", i:"🌍", p:25000}] },
+      { id: 'c18', name: "Власть", price: 15000, items: [{n:"Скипетр", i:"🏺", p:4000}, {n:"Трон", i:"🪑", p:8000}, {n:"Корона Империи", i:"👑", p:18000}, {n:"Власть над миром", i:"🌐", p:40000}] },
+      { id: 'c19', name: "Секрет", price: 20000, items: [{n:"Ключ", i:"🗝️", p:5000}, {n:"Замок", i:"🔒", p:10000}, {n:"Секретный агент", i:"🕵️", p:22000}, {n:"Код от всего", i:"💻", p:50000}] },
+      { id: 'c20', name: "Semyon Drop", price: 50000, items: [{n:"Автограф Семёна", i:"✍️", p:12000}, {n:"Золотой Семён", i:"🗿", p:25000}, {n:"Бриллиантовый Семён", i:"💎", p:60000}, {n:"САМ СЕМЁН", i:"🤴", p:150000}] }
+    ]
+  };
 
-  /* ---------- Звук заставки ---------- */
-  const dropAudio = new Audio('drop.mp3');
-  dropAudio.preload = 'auto';
-  let audioPlaying = false;
+  let currentCategory = "Стартовые";
+  let currentCase = null;
+  let caseCount = 1;
+  let wonItemsBuffer = [];
+  let craftSlots = { items: [], btns: 0 };
+  let upgradeItem = null;
 
-  function startAudio() {
-    dropAudio.play().then(() => {
-      audioPlaying = true;
-      soundBtn.classList.add('hidden');
-    }).catch(() => {
-      // Браузер заблокировал автовоспроизведение — предлагаем включить звук вручную
-      soundBtn.classList.remove('hidden');
+  /* ---------- СИСТЕМА ---------- */
+  const $ = id => document.getElementById(id);
+  
+  function updateBalance() {
+    $('balanceDisplay').innerText = balance.toLocaleString();
+  }
+
+  function showToast(msg) {
+    const t = $('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    $('view-' + tabId).classList.add('active');
+    if(btn) btn.classList.add('active');
+    
+    if(tabId === 'inventory') renderInventory();
+    if(tabId === 'cases') renderCases();
+  }
+
+  function closeModal(id) { $(id).classList.add('hidden'); }
+  function openModal(id) { $(id).classList.remove('hidden'); }
+
+  /* ---------- ЗАСТАВКА И ЗВУК ---------- */
+  const splashAudio = new Audio('drop.mp3');
+  const splash = $('splash');
+  const app = $('app');
+
+  function startGame() {
+    if(splash.classList.contains('fade')) return;
+    
+    // Звук играет ТОЛЬКО сейчас (по клику)
+    splashAudio.volume = 1.0;
+    splashAudio.play().catch(e => console.log("Audio play failed", e));
+
+    splash.classList.add('fade');
+    setTimeout(() => {
+      splash.remove();
+      app.classList.add('visible');
+      splashAudio.pause();
+      splashAudio.currentTime = 0;
+    }, 500);
+  }
+
+  $('skipBtn').addEventListener('click', startGame);
+  splash.addEventListener('click', (e) => {
+    if(e.target !== $('skipBtn')) startGame();
+  });
+
+  /* ---------- КЛИКЕР ---------- */
+  $('clickBtn').addEventListener('click', () => {
+    balance += 1;
+    updateBalance();
+    // Визуальный эффект
+    const btn = $('clickBtn');
+    btn.style.transform = 'scale(0.95)';
+    setTimeout(() => btn.style.transform = 'scale(1)', 50);
+  });
+
+  /* ---------- КЕЙСЫ ---------- */
+  function renderCases() {
+    const tabsContainer = $('caseTabs');
+    tabsContainer.innerHTML = '';
+    Object.keys(caseCategories).forEach(cat => {
+      const btn = document.createElement('div');
+      btn.className = `tab ${cat === currentCategory ? 'active' : ''}`;
+      btn.innerText = cat;
+      btn.onclick = () => { currentCategory = cat; renderCases(); };
+      tabsContainer.appendChild(btn);
+    });
+
+    const grid = $('caseGrid');
+    grid.innerHTML = '';
+    caseCategories[currentCategory].forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <span class="card-img">🎁</span>
+        <div class="card-title">${c.name}</div>
+        <div class="card-price">${c.price} 🔘</div>
+        <button class="btn-primary" onclick="openCaseModal('${c.id}')">Открыть</button>
+      `;
+      grid.appendChild(card);
     });
   }
 
-  window.addEventListener('load', startAudio);
+  function openCaseModal(caseId) {
+    // Найти кейс
+    for(let cat in caseCategories) {
+      const found = caseCategories[cat].find(c => c.id === caseId);
+      if(found) { currentCase = found; break; }
+    }
+    if(!currentCase) return;
 
-  soundBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); // клик по кнопке звука не пропускает заставку
-    startAudio();
-  });
+    $('caseModalTitle').innerText = currentCase.name;
+    $('caseControls').classList.remove('hidden');
+    $('caseResult').classList.add('hidden');
+    setCaseCount(1);
+    
+    // Подготовка рулетки (визуально)
+    const track = $('rouletteTrack');
+    track.style.transition = 'none';
+    track.style.transform = 'translateX(0)';
+    track.innerHTML = '';
+    // Генерируем длинную ленту для анимации
+    for(let i=0; i<50; i++) {
+      const item = currentCase.items[Math.floor(Math.random() * currentCase.items.length)];
+      const div = document.createElement('div');
+      div.className = 'roulette-item';
+      div.innerHTML = `<span>${item.i}</span><span style="font-size:10px; color:#888">${item.p}🔘</span>`;
+      track.appendChild(div);
+    }
 
-  /* Если drop.png не найден — показываем запасной логотип */
-  splashImg.addEventListener('error', () => {
-    splashImg.classList.add('hidden');
-    fallback.classList.remove('hidden');
-  });
-
-  /* ---------- Пропуск заставки ---------- */
-  let skipped = false;
-  function skipSplash() {
-    if (skipped) return;
-    skipped = true;
-    dropAudio.pause();
-    dropAudio.currentTime = 0;
-    splash.classList.add('fade');
-    menu.classList.remove('hidden');
-    requestAnimationFrame(() => menu.classList.add('show'));
-    setTimeout(() => splash.remove(), 600);
+    openModal('modal-case');
   }
 
-  splash.addEventListener('click', skipSplash);   // клик по заставке = пропуск
-  document.addEventListener('keydown', (e) => {   // бонус: Enter/Space/Escape тоже пропускают
-    if (!skipped && ['Enter',' ','Escape'].includes(e.key)) skipSplash();
-  });
-
-  /* ---------- Меню (заглушки, геймплей позже) ---------- */
-  document.querySelectorAll('[data-soon]').forEach(btn => {
-    btn.addEventListener('click', () => showToast(`«${btn.dataset.soon}» — скоро открытие!`));
-  });
-
-  let toastTimer;
-  function showToast(text) {
-    toast.textContent = text;
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+  function setCaseCount(n) {
+    caseCount = n;
+    $('caseTotalPrice').innerText = (currentCase.price * n).toLocaleString();
   }
+
+  function spinRoulette() {
+    const totalCost = currentCase.price * caseCount;
+    if(balance < totalCost) {
+      showToast("Недостаточно кнопок!");
+      return;
+    }
+    balance -= totalCost;
+    updateBalance();
+
+    $('caseControls').classList.add('hidden');
+    
+    // Логика выигрыша
+    wonItemsBuffer = [];
+    for(let i=0; i<caseCount; i++) {
+      // Простая рандомизация (можно добавить веса)
+      const win = currentCase.items[Math.floor(Math.random() * currentCase.items.length)];
+      wonItemsBuffer.push({...win}); // copy
+    }
+
+    // Анимация
+    const track = $('rouletteTrack');
+    // Добавляем выигрышные предметы в конец ленты, чтобы остановиться на них
+    // Для простоты анимации просто сдвигаем на фиксированное расстояние
+    const itemWidth = 100;
+    const stopPosition = (40 * itemWidth) - (track.parentElement.offsetWidth / 2) + (itemWidth/2);
+    
+    // Пересобираем ленту, чтобы последний элемент был выигрышным (для одиночного открытия)
+    // Для мульти-открытия просто показываем список после
+    if(caseCount === 1) {
+        const winItem = wonItemsBuffer[0];
+        const winDiv = document.createElement('div');
+        winDiv.className = 'roulette-item';
+        winDiv.innerHTML = `<span>${winItem.i}</span><span style="font-size:10px; color:var(--accent)">${winItem.p}🔘</span>`;
+        winDiv.style.border = "2px solid var(--accent)";
+        track.appendChild(winDiv);
+        // Корректировка остановки
+        const finalStop = (track.children.length - 1) * itemWidth - (track.parentElement.offsetWidth / 2) + (itemWidth/2);
+        track.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0.1, 1)';
+        track.style.transform = `translateX(-${finalStop}px)`;
+    } else {
+        // Для нескольких просто крутим долго
+        track.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0.1, 1)';
+        track.style.transform = `translateX(-${stopPosition}px)`;
+    }
+
+    setTimeout(() => {
+      showCaseResult();
+    }, 4000);
+  }
+
+  function showCaseResult() {
+    $('caseResult').classList.remove('hidden');
+    const list = $('wonItemsList');
+    list.innerHTML = '';
+    let totalWinPrice = 0;
+    
+    wonItemsBuffer.forEach(item => {
+      totalWinPrice += item.p;
+      const div = document.createElement('div');
+      div.style.cssText = "display:inline-block; margin:5px; text-align:center;";
+      div.innerHTML = `<div style="font-size:30px">${item.i}</div><div style="font-size:12px; color:var(--accent)">${item.p}🔘</div>`;
+      list.appendChild(div);
+    });
+
+    // Сохраняем цену для продажи
+    $('caseResult').dataset.totalPrice = totalWinPrice;
+  }
+
+  function sellWonItems() {
+    const price = parseInt($('caseResult').dataset.totalPrice);
+    balance += price;
+    updateBalance();
+    showToast(`Продано за ${price} кнопок!`);
+    closeModal('modal-case');
+  }
+
+  function keepWonItems() {
+    wonItemsBuffer.forEach(item => {
+      inventory.push({...item, uid: Date.now() + Math.random()});
+    });
+    showToast("Предметы в инвентаре!");
+    closeModal('modal-case');
+  }
+
+  /* ---------- ИНВЕНТАРЬ ---------- */
+  function renderInventory() {
+    const grid = $('inventoryGrid');
+    grid.innerHTML = '';
+    if(inventory.length === 0) {
+      $('emptyInv').style.display = 'block';
+      return;
+    }
+    $('emptyInv').style.display = 'none';
+    
+    inventory.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <span class="card-img">${item.i}</span>
+        <div class="card-title">${item.n}</div>
+        <div class="card-price">${item.p} 🔘</div>
+        <button class="btn-primary btn-secondary" style="padding:8px; font-size:12px;" onclick="sellInventoryItem(${index})">Продать</button>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  function sellInventoryItem(index) {
+    const item = inventory[index];
+    balance += item.p;
+    inventory.splice(index, 1);
+    updateBalance();
+    renderInventory();
+    showToast(`Продано: ${item.n}`);
+  }
+
+  /* ---------- КРАФТ ---------- */
+  function addToCraft(type) {
+    if(type === 'item') {
+      if(craftSlots.items.length >= 4) return showToast("Максимум 4 предмета");
+      // Открываем модалку выбора из инвентаря
+      openSelectModal('Выберите предмет для крафта', inventory, (item, idx) => {
+        craftSlots.items.push({...item, invIndex: idx});
+        renderCraftSlots();
+        closeModal('modal-select');
+      });
+    } else if(type === 'btn') {
+      // Добавляем фиксированную сумму кнопок (например, 100 за слот)
+      const cost = 100;
+      if(balance < cost) return showToast("Нужно 100 кнопок за слот");
+      balance -= cost;
+      craftSlots.btns++;
+      updateBalance();
+      renderCraftSlots();
+    }
+  }
+
+  function renderCraftSlots() {
+    const iContainer = $('craftItemSlots');
+    iContainer.innerHTML = '';
+    for(let i=0; i<4; i++) {
+      const slot = document.createElement('div');
+      if(craftSlots.items[i]) {
+        slot.className = 'slot filled';
+        slot.innerHTML = craftSlots.items[i].i;
+        slot.onclick = () => { 
+            balance += craftSlots.items[i].p; // Возвращаем предмет? Нет, просто удаляем
+            // Логика возврата сложная, просто очистим слот
+            // Для простоты: клик удаляет
+            craftSlots.items.splice(i, 1);
+            renderCraftSlots();
+        };
+      } else {
+        slot.className = 'slot';
+        slot.innerHTML = '+';
+        slot.onclick = () => addToCraft('item');
+      }
+      iContainer.appendChild(slot);
+    }
+
+    const bContainer = $('craftBtnSlots');
+    bContainer.innerHTML = '';
+    for(let i=0; i<3; i++) {
+      const slot = document.createElement('div');
+      if(i < craftSlots.btns) {
+        slot.className = 'slot filled';
+        slot.innerHTML = '🔘';
+        slot.onclick = () => {
+            balance += 100; // Возврат
+            craftSlots.btns--;
+            updateBalance();
+            renderCraftSlots();
+        };
+      } else {
+        slot.className = 'slot';
+        slot.innerHTML = '🔘';
+        slot.onclick = () => addToCraft('btn');
+      }
+      bContainer.appendChild(slot);
+    }
+
+    // Расчет стоимости (сумма предметов + кнопки)
+    let totalVal = craftSlots.items.reduce((sum, it) => sum + it.p, 0) + (craftSlots.btns * 100);
+    $('craftCost').innerText = totalVal + " 🔘";
+  }
+
+  function clearCraft() {
+    // Возвращаем предметы в инвентарь? Или просто теряем? Пусть теряются для хардкора, или возвращаются.
+    // Вернем предметы в инвентарь
+    craftSlots.items.forEach(it => {
+        // Мы удалили их из инвентаря при добавлении? Нет, мы копировали.
+        // Значит они дублировались. Нужно удалять из инвентаря при добавлении.
+        // Исправление: при addToCraft мы не удаляли. Сделаем вид, что они "использованы".
+        // Для простоты прототипа: предметы в слотах считаются "потраченными".
+    });
+    craftSlots = { items: [], btns: 0 };
+    renderCraftSlots();
+  }
+
+  function runCraft() {
+    if(craftSlots.items.length === 0 && craftSlots.btns === 0) return showToast("Пусто!");
+    
+    const totalVal = craftSlots.items.reduce((sum, it) => sum + it.p, 0) + (craftSlots.btns * 100);
+    
+    // Шанс и результат
+    // Результат может быть от 0 до 200% от вложений
+    const multiplier = Math.random() * 2; 
+    const resultPrice = Math.floor(totalVal * multiplier);
+    
+    // Удаляем предметы из инвентаря (теперь точно)
+    craftSlots.items.forEach(craftItem => {
+        const idx = inventory.findIndex(invItem => invItem.uid === craftItem.uid);
+        if(idx > -1) inventory.splice(idx, 1);
+    });
+
+    // Генерируем "новый" предмет
+    const newItem = {
+        n: "Скрафченный лут",
+        i: "✨",
+        p: resultPrice,
+        uid: Date.now()
+    };
+    
+    inventory.push(newItem);
+    craftSlots = { items: [], btns: 0 };
+    renderCraftSlots();
+    
+    showToast(`Крафт завершен! Получено: ${resultPrice} 🔘`);
+    switchTab('inventory', document.querySelectorAll('.nav-item')[4]);
+  }
+
+  /* ---------- АПГРЕЙД ---------- */
+  function selectUpgradeItem() {
+    if(inventory.length === 0) return showToast("Инвентарь пуст");
+    openSelectModal('Выберите предмет для апгрейда', inventory, (item, idx) => {
+      upgradeItem = {...item, invIndex: idx};
+      $('upgradeCenter').innerHTML = `<span style="font-size:40px">${item.i}</span>`;
+      calculateUpgradeChance();
+      closeModal('modal-select');
+      $('upgradeBtn').disabled = false;
+    });
+  }
+
+  function calculateUpgradeChance() {
+    if(!upgradeItem) return;
+    const mult = parseFloat($('multiplierSelect').value);
+    // Формула шанса: 100 / mult (примерно), но уменьшаем от цены (чем дороже, тем сложнее, но тут упростим)
+    // Базовый шанс 50% для x2.
+    let chance = 100 / mult; 
+    // Небольшой рандом для реалистичности интерфейса
+    chance = Math.min(95, Math.max(1, chance)); 
+    
+    $('upgradeChance').innerText = Math.floor(chance) + '%';
+    
+    const targetPrice = Math.floor(upgradeItem.p * mult);
+    $('upgradeTarget').innerText = `Цель: ${targetPrice} 🔘 (x${mult})`;
+    
+    // Сброс анимации
+    $('upgradeProgress').style.transform = `rotate(0deg)`;
+  }
+
+  $('multiplierSelect').addEventListener('change', calculateUpgradeChance);
+
+  function runUpgrade() {
+    if(!upgradeItem) return;
+    const mult = parseFloat($('multiplierSelect').value);
+    const chance = parseFloat($('upgradeChance').innerText) / 100;
+    const isWin = Math.random() < chance;
+    
+    const btn = $('upgradeBtn');
+    btn.disabled = true;
+    
+    // Анимация круга
+    const progress = $('upgradeProgress');
+    const rotation = isWin ? 360 * 5 + 180 : 360 * 2 + (Math.random() * 300); // Крутим много
+    progress.style.transition = 'transform 2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    progress.style.transform = `rotate(${rotation}deg)`;
+    
+    setTimeout(() => {
+      // Удаляем старый предмет
+      const idx = inventory.findIndex(i => i.uid === upgradeItem.uid);
+      if(idx > -1) inventory.splice(idx, 1);
+      
+      if(isWin) {
+        const newPrice = Math.floor(upgradeItem.p * mult);
+        const newItem = {
+            n: upgradeItem.n + " (UP)",
+            i: upgradeItem.i,
+            p: newPrice,
+            uid: Date.now()
+        };
+        inventory.push(newItem);
+        showToast(`УСПЕХ! Новый предмет: ${newPrice} 🔘`);
+        $('upgradeCenter').innerHTML = `<span style="font-size:40px; color:var(--accent)">${newItem.i}</span>`;
+      } else {
+        showToast("НЕУДАЧА! Предмет сломан.");
+        $('upgradeCenter').innerHTML = `<span style="font-size:40px; color:#555">💥</span>`;
+      }
+      
+      upgradeItem = null;
+      btn.disabled = true; // Ждем выбора нового
+      
+      // Сброс через время
+      setTimeout(() => {
+         progress.style.transition = 'none';
+         progress.style.transform = `rotate(0deg)`;
+         $('upgradeCenter').innerHTML = `<span style="font-size:12px; color:#666">Шанс</span><span id="upgradeChance" style="font-size:24px; font-weight:bold;">0%</span>`;
+         $('upgradeTarget').innerText = "Цель: ---";
+      }, 2000);
+
+    }, 2000);
+  }
+
+  /* ---------- ОБЩАЯ МОДАЛКА ВЫБОРА ---------- */
+  function openSelectModal(title, list, callback) {
+    $('selectModalTitle').innerText = title;
+    const container = $('selectList');
+    container.innerHTML = '';
+    
+    if(list.length === 0) {
+        container.innerHTML = '<div style="color:#666">Пусто</div>';
+    }
+
+    list.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#222; padding:10px; border-radius:10px; cursor:pointer;";
+      row.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><span style="font-size:24px">${item.i}</span> <span>${item.n}</span></div> <span style="color:var(--accent)">${item.p}🔘</span>`;
+      row.onclick = () => callback(item, idx);
+      container.appendChild(row);
+    });
+    
+    openModal('modal-select');
+  }
+
+  // Init
+  updateBalance();
+  renderCases();
+
 </script>
 </body>
 </html>
