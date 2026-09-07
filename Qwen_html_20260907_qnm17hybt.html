@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Semyon Drop</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-user-select:none; user-select:none; }
+  html, body { height:100%; overflow:hidden; font-family:'Segoe UI', Arial, sans-serif; background:#12143a; }
+  .hidden { display:none !important; }
+
+  /* ---------- ЗАСТАВКА ---------- */
+  #splash {
+    position:fixed; inset:0; z-index:100; cursor:pointer;
+    background:#000; transition:opacity .5s ease;
+  }
+  #splash.fade { opacity:0; pointer-events:none; }
+  #splash img { width:100%; height:100%; object-fit:cover; display:block; }
+
+  /*Fallback, если drop.png не найден*/
+  #splashFallback {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 40%, #6a2ea0, #2a1655 70%, #120b30);
+  }
+  #splashFallback h1 {
+    font-size:clamp(42px, 10vw, 110px); font-weight:900; letter-spacing:4px; text-align:center;
+    background:linear-gradient(180deg,#ffe9a3,#ffb340 55%,#ff7a1a);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 6px 30px rgba(255,150,0,.35);
+  }
+
+  #skipHint {
+    position:absolute; left:50%; bottom:26px; transform:translateX(-50%);
+    color:#fff; font-size:15px; opacity:.85; letter-spacing:1px;
+    text-shadow:0 2px 8px rgba(0,0,0,.7); animation:pulse 1.6s infinite;
+  }
+  #skipBtn {
+    position:absolute; right:22px; bottom:20px; padding:10px 20px;
+    border:none; border-radius:999px; cursor:pointer;
+    background:rgba(0,0,0,.45); color:#fff; font-size:14px; letter-spacing:1px;
+    border:1px solid rgba(255,255,255,.35); backdrop-filter:blur(6px);
+    transition:background .2s, transform .2s;
+  }
+  #skipBtn:hover { background:rgba(0,0,0,.7); transform:scale(1.05); }
+
+  #soundBtn {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    padding:16px 30px; border:none; border-radius:999px; cursor:pointer;
+    font-size:17px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg,#ff9d2e,#ff6a00);
+    box-shadow:0 8px 30px rgba(255,120,0,.5); animation:pulse 1.4s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+
+  /* ---------- ГЛАВНОЕ МЕНЮ ---------- */
+  #menu {
+    position:fixed; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:26px;
+    background:linear-gradient(160deg,#1b1f4b 0%, #3b1d6e 45%, #6a2ea0 100%);
+    opacity:0; transition:opacity .6s ease;
+  }
+  #menu.show { opacity:1; }
+
+  .topbar {
+    position:absolute; top:0; left:0; right:0;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px;
+  }
+  .balance {
+    display:flex; align-items:center; gap:8px;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+    backdrop-filter:blur(8px); border-radius:999px; padding:10px 18px;
+    color:#ffd764; font-weight:800; font-size:17px;
+  }
+  .icon-btn {
+    width:44px; height:44px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+    color:#fff; font-size:20px; backdrop-filter:blur(8px); transition:transform .2s;
+  }
+  .icon-btn:hover { transform:scale(1.1); }
+
+  .logo { text-align:center; animation:logoIn .8s ease both; }
+  .logo h1 {
+    font-size:clamp(44px, 9vw, 96px); font-weight:900; letter-spacing:3px; line-height:1;
+    background:linear-gradient(180deg,#ffe9a3,#ffb340 55%,#ff7a1a);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 8px 24px rgba(255,140,0,.35));
+  }
+  .logo p { color:#cfc4ff; letter-spacing:6px; margin-top:8px; font-size:14px; text-transform:uppercase; }
+  @keyframes logoIn { from{transform:scale(.7); opacity:0} to{transform:scale(1); opacity:1} }
+
+  .menu-buttons { display:flex; flex-direction:column; gap:14px; width:min(320px, 82vw); }
+  .menu-btn {
+    padding:16px 20px; border:none; border-radius:16px; cursor:pointer;
+    font-size:18px; font-weight:800; letter-spacing:1px; color:#4a2600;
+    background:linear-gradient(180deg,#ffd764,#ff9d2e);
+    box-shadow:0 6px 0 #b35b00, 0 12px 30px rgba(0,0,0,.35);
+    transition:transform .12s, box-shadow .12s;
+  }
+  .menu-btn:active { transform:translateY(4px); box-shadow:0 2px 0 #b35b00; }
+  .menu-btn.secondary {
+    color:#fff; background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.3); box-shadow:0 6px 0 rgba(0,0,0,.3);
+    backdrop-filter:blur(8px);
+  }
+
+  /* Парящие монетки на фоне меню */
+  .coin { position:absolute; font-size:26px; opacity:.35; animation:float 7s ease-in-out infinite; pointer-events:none; }
+  @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-40px) rotate(20deg)} }
+
+  #toast {
+    position:fixed; left:50%; bottom:34px; transform:translateX(-50%) translateY(80px);
+    background:rgba(0,0,0,.75); color:#fff; padding:12px 24px; border-radius:999px;
+    font-size:15px; backdrop-filter:blur(8px); transition:transform .35s ease; z-index:200;
+  }
+  #toast.show { transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ЗАСТАВКА -->
+<div id="splash">
+  <img id="splashImg" src="drop.png" alt="Semyon Drop">
+  <div id="splashFallback" class="hidden"><h1>SEMYON<br>DROP</h1></div>
+  <button id="soundBtn" class="hidden">🔊 Включить звук</button>
+  <div id="skipHint">Нажмите, чтобы пропустить</div>
+  <button id="skipBtn">ПРОПУСТИТЬ »</button>
+</div>
+
+<!-- ГЛАВНОЕ МЕНЮ -->
+<div id="menu" class="hidden">
+  <span class="coin" style="top:15%; left:10%;">🪙</span>
+  <span class="coin" style="top:70%; left:85%; animation-delay:-2s;">🎁</span>
+  <span class="coin" style="top:80%; left:15%; animation-delay:-4s;">🪙</span>
+  <span class="coin" style="top:20%; left:80%; animation-delay:-1s;"></span>
+
+  <div class="topbar">
+    <div class="balance">🪙 <span id="balanceValue">1 000</span></div>
+    <button class="icon-btn" data-soon="Профиль">👤</button>
+  </div>
+
+  <div class="logo">
+    <h1>SEMYON DROP</h1>
+    <p>Открывай кейсы — лови подарки</p>
+  </div>
+
+  <div class="menu-buttons">
+    <button class="menu-btn" data-soon="Кейсы">🎁 КЕЙСЫ</button>
+    <button class="menu-btn secondary" data-soon="Магазин">🛒 МАГАЗИН</button>
+    <button class="menu-btn secondary" data-soon="Инвентарь">🎒 ИНВЕНТАРЬ</button>
+    <button class="menu-btn secondary" data-soon="Настройки">⚙️ НАСТРОЙКИ</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const splash   = document.getElementById('splash');
+  const splashImg= document.getElementById('splashImg');
+  const fallback = document.getElementById('splashFallback');
+  const soundBtn = document.getElementById('soundBtn');
+  const skipBtn  = document.getElementById('skipBtn');
+  const menu     = document.getElementById('menu');
+  const toast    = document.getElementById('toast');
+
+  /* ---------- Звук заставки ---------- */
+  const dropAudio = new Audio('drop.mp3');
+  dropAudio.preload = 'auto';
+  let audioPlaying = false;
+
+  function startAudio() {
+    dropAudio.play().then(() => {
+      audioPlaying = true;
+      soundBtn.classList.add('hidden');
+    }).catch(() => {
+      // Браузер заблокировал автовоспроизведение — предлагаем включить звук вручную
+      soundBtn.classList.remove('hidden');
+    });
+  }
+
+  window.addEventListener('load', startAudio);
+
+  soundBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // клик по кнопке звука не пропускает заставку
+    startAudio();
+  });
+
+  /* Если drop.png не найден — показываем запасной логотип */
+  splashImg.addEventListener('error', () => {
+    splashImg.classList.add('hidden');
+    fallback.classList.remove('hidden');
+  });
+
+  /* ---------- Пропуск заставки ---------- */
+  let skipped = false;
+  function skipSplash() {
+    if (skipped) return;
+    skipped = true;
+    dropAudio.pause();
+    dropAudio.currentTime = 0;
+    splash.classList.add('fade');
+    menu.classList.remove('hidden');
+    requestAnimationFrame(() => menu.classList.add('show'));
+    setTimeout(() => splash.remove(), 600);
+  }
+
+  splash.addEventListener('click', skipSplash);   // клик по заставке = пропуск
+  document.addEventListener('keydown', (e) => {   // бонус: Enter/Space/Escape тоже пропускают
+    if (!skipped && ['Enter',' ','Escape'].includes(e.key)) skipSplash();
+  });
+
+  /* ---------- Меню (заглушки, геймплей позже) ---------- */
+  document.querySelectorAll('[data-soon]').forEach(btn => {
+    btn.addEventListener('click', () => showToast(`«${btn.dataset.soon}» — скоро открытие!`));
+  });
+
+  let toastTimer;
+  function showToast(text) {
+    toast.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+</script>
+</body>
+</html>
