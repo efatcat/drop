@@ -6,41 +6,46 @@
 <title>Semyon Drop</title>
 <style>
   :root {
-    --bg: #000000;
-    --panel: #111111;
-    --accent: #ff9d2e;
-    --accent-glow: rgba(255, 157, 46, 0.4);
+    --bg: #050505;
+    --surface: #121212;
+    --surface-hover: #1e1e1e;
+    --primary: #7000ff; /* Неоновый фиолетовый */
+    --primary-glow: rgba(112, 0, 255, 0.4);
+    --accent: #00e5ff; /* Неоновый голубой */
     --text: #ffffff;
-    --gray: #888888;
-    --card-bg: #1a1a1a;
+    --text-sec: #a0a0a0;
+    --border: #2a2a2a;
+    --danger: #ff3b3b;
+    --success: #00ff88;
   }
 
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-user-select:none; user-select:none; font-family:'Segoe UI', Roboto, sans-serif; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-user-select:none; user-select:none; font-family:'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); }
-  button { cursor:pointer; border:none; outline:none; font-family:inherit; }
-  button:disabled { opacity:0.5; cursor:not-allowed; }
+  button { cursor:pointer; border:none; outline:none; font-family:inherit; transition:all 0.2s ease; }
   .hidden { display:none !important; }
 
   /* ---------- ЗАСТАВКА ---------- */
   #splash {
     position:fixed; inset:0; z-index:9999; background:#000;
     display:flex; align-items:center; justify-content:center;
-    transition:opacity .5s ease;
+    transition:opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
   #splash.fade { opacity:0; pointer-events:none; }
-  #splash img { width:100%; height:100%; object-fit:cover; position:absolute; }
+  #splash img { width:100%; height:100%; object-fit:cover; position:absolute; opacity: 0.8; }
   
-  .splash-ui { position:relative; z-index:2; width:100%; height:100%; display:flex; flex-direction:column; justify-content:flex-end; padding-bottom:40px; align-items:center; }
+  .splash-ui { 
+    position:relative; z-index:2; width:100%; height:100%; 
+    display:flex; flex-direction:column; justify-content:flex-end; padding-bottom:50px; align-items:center; 
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+  }
   
   #skipBtn {
-    padding:16px 40px; border-radius:30px; font-size:18px; font-weight:800; text-transform:uppercase;
-    background:linear-gradient(135deg, #ff9d2e, #ff6a00); color:#fff;
-    box-shadow:0 0 20px var(--accent-glow); transition:transform .2s;
+    padding:18px 50px; border-radius:50px; font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing: 1px;
+    background:rgba(255,255,255,0.1); backdrop-filter:blur(10px); border: 1px solid rgba(255,255,255,0.2);
+    color:#fff; box-shadow:0 0 20px rgba(0,0,0,0.5);
   }
+  #skipBtn:hover { background:rgba(255,255,255,0.2); transform: translateY(-2px); }
   #skipBtn:active { transform:scale(0.95); }
-  .hint { margin-top:15px; color:rgba(255,255,255,0.6); font-size:14px; animation:pulse 2s infinite; }
-
-  @keyframes pulse { 0%{opacity:0.5} 50%{opacity:1} 100%{opacity:0.5} }
 
   /* ---------- ОСНОВНОЙ LAYOUT ---------- */
   #app { display:flex; flex-direction:column; height:100%; opacity:0; transition:opacity 1s; }
@@ -48,127 +53,192 @@
 
   /* HEADER */
   header {
-    height:60px; display:flex; align-items:center; justify-content:space-between; padding:0 20px;
-    background:rgba(17,17,17,0.9); backdrop-filter:blur(10px); border-bottom:1px solid #222; z-index:10;
+    height:70px; display:flex; align-items:center; justify-content:space-between; padding:0 24px;
+    background:rgba(18,18,18,0.8); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); z-index:10;
   }
   .balance-box {
-    display:flex; align-items:center; gap:8px; background:#222; padding:8px 16px; border-radius:20px;
-    font-weight:bold; color:var(--accent); border:1px solid #333;
+    display:flex; align-items:center; gap:10px; background:var(--surface); padding:10px 20px; border-radius:30px;
+    font-weight:700; font-size:16px; color:var(--accent); border:1px solid var(--border);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
   }
-  .logo-small { font-weight:900; letter-spacing:1px; background:linear-gradient(45deg, #fff, #aaa); -webkit-background-clip:text; color:transparent; }
+  .logo-small { 
+    font-weight:900; font-size: 20px; letter-spacing:1px; 
+    background:linear-gradient(90deg, #fff, #888); -webkit-background-clip:text; color:transparent; 
+  }
 
   /* CONTENT AREA */
-  main { flex:1; overflow-y:auto; position:relative; padding-bottom:80px; /* space for nav */ }
-  .view { display:none; padding:20px; animation:fadeIn .3s; height:100%; }
+  main { flex:1; overflow-y:auto; position:relative; padding-bottom:90px; scroll-behavior: smooth; }
+  .view { display:none; padding:24px; animation:fadeIn 0.4s ease-out; min-height:100%; }
   .view.active { display:block; }
-  @keyframes fadeIn { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(15px)} to{opacity:1; transform:translateY(0)} }
 
   /* BOTTOM NAV */
   nav {
-    position:fixed; bottom:0; left:0; right:0; height:70px; background:#0a0a0a;
-    display:flex; justify-content:space-around; align-items:center; border-top:1px solid #222; z-index:100;
+    position:fixed; bottom:0; left:0; right:0; height:80px; background:rgba(10,10,10,0.95);
+    display:flex; justify-content:space-around; align-items:center; border-top:1px solid var(--border); z-index:100;
+    backdrop-filter: blur(10px); padding-bottom: env(safe-area-inset-bottom);
   }
   .nav-item {
-    display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--gray);
-    background:none; font-size:11px; font-weight:600; transition:color .2s; width:20%;
+    display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--text-sec);
+    background:none; font-size:11px; font-weight:600; width:20%; position: relative;
   }
-  .nav-item span { font-size:24px; }
-  .nav-item.active { color:var(--accent); }
-  .nav-item:active { transform:scale(0.9); }
+  .nav-item span { font-size:26px; transition: transform 0.2s; filter: grayscale(1); opacity: 0.7; }
+  .nav-item.active { color:var(--text); }
+  .nav-item.active span { filter: grayscale(0); opacity: 1; transform: scale(1.1); text-shadow: 0 0 10px var(--primary-glow); }
+  .nav-item.active::after {
+    content:''; position:absolute; top:-1px; left:20%; right:20%; height:3px; background:var(--primary); border-radius:0 0 4px 4px;
+    box-shadow: 0 0 10px var(--primary);
+  }
 
   /* ---------- COMPONENTS ---------- */
-  h2 { margin-bottom:20px; font-size:24px; text-align:center; }
-  .grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:15px; }
+  h2 { margin-bottom:24px; font-size:28px; font-weight:800; letter-spacing: -0.5px; }
+  .section-title { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sec); margin-bottom: 16px; font-weight: 700; }
+  
+  .grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; }
   
   .card {
-    background:var(--card-bg); border-radius:16px; padding:15px; text-align:center;
-    border:1px solid #333; position:relative; overflow:hidden;
+    background:var(--surface); border-radius:20px; padding:16px; text-align:center;
+    border:1px solid var(--border); position:relative; overflow:hidden;
+    transition: transform 0.2s, border-color 0.2s;
   }
-  .card-img { font-size:40px; margin-bottom:10px; display:block; }
-  .card-title { font-weight:bold; font-size:14px; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .card-price { color:var(--accent); font-weight:bold; font-size:13px; }
+  .card:hover { border-color: #444; transform: translateY(-2px); }
+  
+  .card-img-container {
+    width: 100%; height: 120px; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px; background: radial-gradient(circle at center, #222, transparent);
+    border-radius: 12px;
+  }
+  .card-img { max-width: 80%; max-height: 80%; object-fit: contain; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); }
+  .card-emoji { font-size: 60px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); }
+  
+  .card-title { font-weight:700; font-size:15px; margin-bottom:6px; color: #eee; }
+  .card-price { color:var(--accent); font-weight:800; font-size:14px; display: flex; align-items: center; justify-content: center; gap: 4px; }
   
   .btn-primary {
-    width:100%; padding:12px; border-radius:12px; background:var(--accent); color:#000;
-    font-weight:bold; margin-top:10px; transition:filter .2s;
+    width:100%; padding:14px; border-radius:14px; 
+    background:linear-gradient(135deg, var(--primary), #5000cc); color:#fff;
+    font-weight:700; margin-top:16px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px var(--primary-glow);
   }
-  .btn-primary:active:not(:disabled) { filter:brightness(0.8); }
-  .btn-secondary { background:#333; color:#fff; }
-
-  /* TABS (для кейсов) */
-  .tabs { display:flex; overflow-x:auto; gap:10px; padding-bottom:15px; scrollbar-width:none; }
-  .tabs::-webkit-scrollbar { display:none; }
-  .tab {
-    padding:8px 16px; background:#222; border-radius:20px; font-size:13px; white-space:nowrap; color:#aaa; border:1px solid transparent;
+  .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 6px 20px var(--primary-glow); }
+  .btn-primary:active { transform: scale(0.98); }
+  
+  .btn-secondary { 
+    background:var(--surface-hover); color:#fff; border: 1px solid var(--border); box-shadow: none; 
   }
-  .tab.active { background:#333; color:#fff; border-color:var(--accent); }
+  .btn-secondary:hover { background: #2a2a2a; }
 
   /* ---------- MODALS ---------- */
   .modal-overlay {
     position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:200;
-    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(5px);
+    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
   }
+  .modal-overlay.open { opacity: 1; pointer-events: auto; }
+  
   .modal {
-    background:#111; width:90%; max-width:400px; border-radius:20px; padding:20px;
-    border:1px solid #333; text-align:center; position:relative;
+    background:var(--surface); width:92%; max-width:420px; border-radius:24px; padding:24px;
+    border:1px solid var(--border); text-align:center; position:relative;
+    transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
   }
-  .close-modal { position:absolute; top:15px; right:15px; color:#666; font-size:20px; background:none; }
+  .modal-overlay.open .modal { transform: scale(1); }
+  
+  .close-modal { position:absolute; top:20px; right:20px; color:#666; font-size:24px; background:none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .close-modal:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
   /* ROULETTE ANIMATION */
   .roulette-container {
-    width:100%; height:120px; background:#000; border-top:2px solid #333; border-bottom:2px solid #333;
-    overflow:hidden; position:relative; margin:20px 0; mask-image:linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+    width:100%; height:140px; background:#000; border-radius: 16px;
+    border-top:2px solid var(--border); border-bottom:2px solid var(--border);
+    overflow:hidden; position:relative; margin:24px 0; 
+    mask-image:linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
   }
-  .roulette-track { display:flex; height:100%; align-items:center; transition:transform 4s cubic-bezier(0.1, 0, 0.1, 1); }
+  .roulette-track { display:flex; height:100%; align-items:center; will-change: transform; }
   .roulette-item {
-    min-width:100px; height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    border-right:1px solid #222; font-size:30px;
+    min-width:110px; height:110px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-right:1px solid #1a1a1a;
   }
+  .roulette-item img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
+  .roulette-item .r-emoji { font-size: 40px; margin-bottom: 5px; }
+  .roulette-item .r-price { font-size: 11px; color: var(--text-sec); font-weight: 600; }
+  
   .roulette-marker {
-    position:absolute; left:50%; top:0; bottom:0; width:2px; background:var(--accent); z-index:5; transform:translateX(-50%);
-    box-shadow:0 0 10px var(--accent);
+    position:absolute; left:50%; top:0; bottom:0; width:4px; background:var(--accent); z-index:5; transform:translateX(-50%);
+    box-shadow:0 0 15px var(--accent);
   }
+  .roulette-marker::before, .roulette-marker::after {
+    content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+    border-left: 6px solid transparent; border-right: 6px solid transparent;
+  }
+  .roulette-marker::before { top: 0; border-top: 8px solid var(--accent); }
+  .roulette-marker::after { bottom: 0; border-bottom: 8px solid var(--accent); }
 
   /* UPGRADE CIRCLE */
-  .upgrade-circle-wrap { position:relative; width:200px; height:200px; margin:20px auto; }
+  .upgrade-circle-wrap { position:relative; width:220px; height:220px; margin:30px auto; }
   .upgrade-circle {
-    width:100%; height:100%; border-radius:50%; border:4px solid #333;
-    display:flex; align-items:center; justify-content:center; font-size:50px;
-    position:relative; overflow:hidden;
+    width:100%; height:100%; border-radius:50%; border:4px solid #222;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
   }
   .upgrade-progress {
     position:absolute; inset:-4px; border-radius:50%; border:4px solid transparent;
-    border-top-color:var(--accent); border-right-color:var(--accent);
-    transform:rotate(0deg); transition:transform 2s linear;
+    border-top-color:var(--primary); border-right-color:var(--primary);
+    transform:rotate(0deg); transition:transform 2.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    filter: drop-shadow(0 0 8px var(--primary-glow));
   }
-  .upgrade-center { z-index:2; background:#111; border-radius:50%; width:160px; height:160px; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+  .upgrade-center { 
+    z-index:2; background:var(--surface); border-radius:50%; width:170px; height:170px; 
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+  }
+  .upgrade-center img { width: 80px; height: 80px; object-fit: contain; }
   
   /* CRAFT SLOTS */
-  .craft-slots { display:flex; gap:10px; justify-content:center; margin:20px 0; flex-wrap:wrap; }
+  .craft-slots { display:flex; gap:12px; justify-content:center; margin:20px 0; flex-wrap:wrap; }
   .slot {
-    width:60px; height:60px; background:#222; border:2px dashed #444; border-radius:12px;
-    display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer;
+    width:70px; height:70px; background:#1a1a1a; border:2px dashed #333; border-radius:16px;
+    display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer;
+    transition: all 0.2s;
   }
-  .slot.filled { border-style:solid; border-color:var(--accent); background:#2a2a2a; }
+  .slot:hover { border-color: #555; background: #222; }
+  .slot.filled { border-style:solid; border-color:var(--primary); background:#251a33; }
+  .slot img { width: 40px; height: 40px; object-fit: contain; }
 
-  /* CLICKER - ИСПРАВЛЕНО: удалена невалидная строка active:scale(0.95) */
-  .clicker-area { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
+  /* CLICKER */
+  .clicker-area { display:flex; flex-direction:column; align-items:center; justify-content:center; height:70vh; }
   .big-btn {
-    width:180px; height:180px; border-radius:50%; background:radial-gradient(circle, #333, #000);
-    border:4px solid var(--accent); box-shadow:0 0 30px var(--accent-glow);
-    font-size:60px; display:flex; align-items:center; justify-content:center;
-    transition:transform .1s, box-shadow .1s;
+    width:200px; height:200px; border-radius:50%; 
+    background:radial-gradient(circle at 30% 30%, #2a2a2a, #000);
+    border:2px solid #333; box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.05);
+    font-size:80px; display:flex; align-items:center; justify-content:center;
+    transition:transform 0.05s, box-shadow 0.1s;
+    position: relative;
   }
-  .big-btn:active { transform:scale(0.95); box-shadow:0 0 50px var(--accent-glow); }
-  .click-info { margin-top:30px; font-size:18px; color:#aaa; }
+  .big-btn::after {
+    content: ''; position: absolute; inset: -10px; border-radius: 50%; border: 2px solid var(--primary); opacity: 0.3;
+  }
+  .big-btn:active { transform:scale(0.92); box-shadow: 0 0 60px var(--primary-glow); border-color: var(--primary); }
+  .click-info { margin-top:40px; font-size:16px; color:var(--text-sec); text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
 
   /* TOAST */
   #toast {
-    position:fixed; top:80px; left:50%; transform:translateX(-50%);
-    background:rgba(255,255,255,0.1); backdrop-filter:blur(10px); padding:10px 20px; border-radius:20px;
-    font-size:14px; pointer-events:none; opacity:0; transition:opacity .3s; z-index:300; border:1px solid rgba(255,255,255,0.2);
+    position:fixed; top:90px; left:50%; transform:translateX(-50%) translateY(-20px);
+    background:rgba(30,30,30,0.95); backdrop-filter:blur(10px); padding:14px 28px; border-radius:30px;
+    font-size:14px; font-weight: 600; pointer-events:none; opacity:0; transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index:300; 
+    border:1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   }
-  #toast.show { opacity:1; }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* SELECT LIST */
+  .select-row {
+    display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:12px 16px; border-radius:14px; cursor:pointer; margin-bottom: 10px;
+    border: 1px solid transparent; transition: all 0.2s;
+  }
+  .select-row:hover { background: #252525; border-color: #333; }
+  .select-row img { width: 32px; height: 32px; object-fit: contain; }
+  .select-row .emoji { font-size: 24px; }
 
 </style>
 </head>
@@ -178,8 +248,7 @@
 <div id="splash">
   <img src="drop.png" alt="Splash" onerror="this.style.display='none'">
   <div class="splash-ui">
-    <button id="skipBtn">ПРОПУСТИТЬ</button>
-    <div class="hint">Нажмите для входа</div>
+    <button id="skipBtn">Пропустить</button>
   </div>
 </div>
 
@@ -195,17 +264,13 @@
     <div id="view-clicker" class="view active">
       <div class="clicker-area">
         <div class="big-btn" id="clickBtn">🔘</div>
-        <div class="click-info">Кликай, чтобы заработать кнопки</div>
-        <div style="margin-top:10px; color:var(--accent)">+1 за клик</div>
+        <div class="click-info">Кликай для кнопок</div>
       </div>
     </div>
 
     <!-- 2. КЕЙСЫ -->
     <div id="view-cases" class="view">
       <h2>Кейсы</h2>
-      <div class="tabs" id="caseTabs">
-        <!-- Tabs generated by JS -->
-      </div>
       <div class="grid" id="caseGrid">
         <!-- Cases generated by JS -->
       </div>
@@ -214,38 +279,29 @@
     <!-- 3. КРАФТ -->
     <div id="view-craft" class="view">
       <h2>Крафт</h2>
-      <p style="text-align:center; color:#888; font-size:13px; margin-bottom:20px;">Объедини предметы и кнопки, чтобы получить новый шанс.</p>
+      <p style="text-align:center; color:var(--text-sec); font-size:14px; margin-bottom:30px; line-height: 1.5;">Объедини предметы и кнопки,<br>чтобы создать новый лут.</p>
       
-      <div style="text-align:center; margin-bottom:10px; color:#aaa; font-size:12px;">Слоты предметов (макс 4)</div>
-      <div class="craft-slots" id="craftItemSlots">
-        <div class="slot" onclick="addToCraft('item')">+</div>
-        <div class="slot" onclick="addToCraft('item')">+</div>
-        <div class="slot" onclick="addToCraft('item')">+</div>
-        <div class="slot" onclick="addToCraft('item')">+</div>
-      </div>
+      <div class="section-title" style="text-align:center;">Слоты предметов (макс 4)</div>
+      <div class="craft-slots" id="craftItemSlots"></div>
 
-      <div style="text-align:center; margin-bottom:10px; color:#aaa; font-size:12px;">Слоты кнопок (валюта)</div>
-      <div class="craft-slots" id="craftBtnSlots">
-        <div class="slot" onclick="addToCraft('btn')">🔘</div>
-        <div class="slot" onclick="addToCraft('btn')">🔘</div>
-        <div class="slot" onclick="addToCraft('btn')">🔘</div>
-      </div>
+      <div class="section-title" style="text-align:center; margin-top: 20px;">Слоты кнопок (валюта)</div>
+      <div class="craft-slots" id="craftBtnSlots"></div>
 
-      <div style="text-align:center; margin:20px 0;">
-        <div style="font-size:12px; color:#666;">Стоимость крафта:</div>
-        <div id="craftCost" style="font-size:20px; font-weight:bold; color:var(--accent);">0 🔘</div>
+      <div style="text-align:center; margin:30px 0; background: var(--surface); padding: 20px; border-radius: 20px; border: 1px solid var(--border);">
+        <div style="font-size:12px; color:var(--text-sec); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Стоимость крафта</div>
+        <div id="craftCost" style="font-size:28px; font-weight:800; color:var(--accent);">0 🔘</div>
       </div>
 
       <button class="btn-primary" onclick="runCraft()">СКРАФТИТЬ</button>
-      <button class="btn-primary btn-secondary" onclick="clearCraft()" style="margin-top:10px;">Очистить</button>
+      <button class="btn-primary btn-secondary" onclick="clearCraft()" style="margin-top:12px;">Очистить слоты</button>
     </div>
 
     <!-- 4. АПГРЕЙД -->
     <div id="view-upgrade" class="view">
       <h2>Апгрейд (ДРОП)</h2>
-      <div style="display:flex; gap:10px; margin-bottom:20px;">
-        <button class="btn-primary btn-secondary" style="flex:1" onclick="selectUpgradeItem()">Выбрать предмет</button>
-        <select id="multiplierSelect" style="flex:1; background:#222; color:#fff; border:1px solid #444; border-radius:12px; padding:0 10px;">
+      <div style="display:flex; gap:12px; margin-bottom:10px;">
+        <button class="btn-primary btn-secondary" style="flex:1; margin-top:0;" onclick="selectUpgradeItem()">Выбрать предмет</button>
+        <select id="multiplierSelect" style="flex:0.6; background:var(--surface); color:#fff; border:1px solid var(--border); border-radius:14px; padding:0 15px; font-size: 16px; font-weight: 700; outline: none; cursor: pointer;">
           <option value="1.5">x1.5</option>
           <option value="2">x2.0</option>
           <option value="3">x3.0</option>
@@ -258,14 +314,14 @@
         <div class="upgrade-circle">
           <div class="upgrade-progress" id="upgradeProgress"></div>
           <div class="upgrade-center" id="upgradeCenter">
-            <span style="font-size:12px; color:#666">Шанс</span>
-            <span id="upgradeChance" style="font-size:24px; font-weight:bold;">0%</span>
+            <span style="font-size:12px; color:var(--text-sec); text-transform: uppercase; letter-spacing: 1px;">Шанс</span>
+            <span id="upgradeChance" style="font-size:28px; font-weight:800; margin-top: 5px;">0%</span>
           </div>
         </div>
       </div>
       
-      <div style="text-align:center; margin-bottom:20px;">
-        <div id="upgradeTarget" style="font-size:14px; color:#aaa;">Цель: ---</div>
+      <div style="text-align:center; margin-bottom:30px; background: var(--surface); padding: 15px; border-radius: 16px; border: 1px solid var(--border);">
+        <div id="upgradeTarget" style="font-size:15px; color:#fff; font-weight: 600;">Цель: ---</div>
       </div>
 
       <button class="btn-primary" id="upgradeBtn" onclick="runUpgrade()" disabled>АПГРЕЙДНУТЬ</button>
@@ -274,10 +330,8 @@
     <!-- 5. ИНВЕНТАРЬ -->
     <div id="view-inventory" class="view">
       <h2>Инвентарь</h2>
-      <div class="grid" id="inventoryGrid">
-        <!-- Items generated by JS -->
-      </div>
-      <div id="emptyInv" style="text-align:center; color:#555; margin-top:50px;">Пусто...</div>
+      <div class="grid" id="inventoryGrid"></div>
+      <div id="emptyInv" style="text-align:center; color:#555; margin-top:80px; font-size: 16px;">Инвентарь пуст</div>
     </div>
   </main>
 
@@ -293,47 +347,47 @@
 <!-- МОДАЛКИ -->
 
 <!-- Модалка открытия кейса -->
-<div id="modal-case" class="modal-overlay hidden">
+<div id="modal-case" class="modal-overlay">
   <div class="modal">
     <button class="close-modal" onclick="closeModal('modal-case')">×</button>
-    <h3 id="caseModalTitle" style="margin-bottom:10px;">Название кейса</h3>
+    <h3 id="caseModalTitle" style="margin-bottom:5px; font-size: 22px;">Название кейса</h3>
     
     <div class="roulette-container">
       <div class="roulette-marker"></div>
-      <div class="roulette-track" id="rouletteTrack">
-        <!-- Items injected here -->
-      </div>
+      <div class="roulette-track" id="rouletteTrack"></div>
     </div>
 
     <div id="caseControls">
-      <p style="color:#aaa; font-size:13px; margin-bottom:10px;">Сколько открыть?</p>
-      <div style="display:flex; gap:5px; justify-content:center; margin-bottom:15px;">
-        <button class="btn-primary btn-secondary" style="width:auto; padding:8px 15px; margin:0;" onclick="setCaseCount(1)">x1</button>
-        <button class="btn-primary btn-secondary" style="width:auto; padding:8px 15px; margin:0;" onclick="setCaseCount(2)">x2</button>
-        <button class="btn-primary btn-secondary" style="width:auto; padding:8px 15px; margin:0;" onclick="setCaseCount(3)">x3</button>
-        <button class="btn-primary btn-secondary" style="width:auto; padding:8px 15px; margin:0;" onclick="setCaseCount(4)">x4</button>
+      <p style="color:var(--text-sec); font-size:13px; margin-bottom:12px; text-transform: uppercase; letter-spacing: 1px;">Количество</p>
+      <div style="display:flex; gap:8px; justify-content:center; margin-bottom:20px;">
+        <button class="btn-primary btn-secondary count-btn" style="width:auto; padding:10px 20px; margin:0; flex:1;" onclick="setCaseCount(1)">x1</button>
+        <button class="btn-primary btn-secondary count-btn" style="width:auto; padding:10px 20px; margin:0; flex:1;" onclick="setCaseCount(2)">x2</button>
+        <button class="btn-primary btn-secondary count-btn" style="width:auto; padding:10px 20px; margin:0; flex:1;" onclick="setCaseCount(3)">x3</button>
+        <button class="btn-primary btn-secondary count-btn" style="width:auto; padding:10px 20px; margin:0; flex:1;" onclick="setCaseCount(4)">x4</button>
       </div>
-      <div style="font-size:18px; font-weight:bold; margin-bottom:15px;">Цена: <span id="caseTotalPrice" style="color:var(--accent)">0</span> 🔘</div>
-      <button class="btn-primary" id="openCaseBtn" onclick="spinRoulette()">ОТКРЫТЬ</button>
+      <div style="font-size:20px; font-weight:800; margin-bottom:20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        Цена: <span id="caseTotalPrice" style="color:var(--accent)">0</span> 🔘
+      </div>
+      <button class="btn-primary" id="openCaseBtn" onclick="spinRoulette()" style="margin-top:0;">ОТКРЫТЬ КЕЙС</button>
     </div>
 
     <div id="caseResult" class="hidden">
-      <h2 style="color:var(--accent); margin:10px 0;">ВЫИГРЫШ!</h2>
-      <div id="wonItemsList" style="margin-bottom:20px;"></div>
-      <div style="display:flex; gap:10px;">
-        <button class="btn-primary btn-secondary" style="flex:1" onclick="sellWonItems()">💰 Продать</button>
-        <button class="btn-primary" style="flex:1" onclick="keepWonItems()">🎒 В инвентарь</button>
+      <h2 style="color:var(--success); margin:10px 0 20px 0; font-size: 24px;">ВЫИГРЫШ!</h2>
+      <div id="wonItemsList" style="margin-bottom:25px; display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;"></div>
+      <div style="display:flex; gap:12px;">
+        <button class="btn-primary btn-secondary" style="flex:1; margin-top:0;" onclick="sellWonItems()">💰 Продать</button>
+        <button class="btn-primary" style="flex:1; margin-top:0;" onclick="keepWonItems()">🎒 Оставить</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Модалка выбора предмета для апгрейда/крафта -->
-<div id="modal-select" class="modal-overlay hidden">
-  <div class="modal" style="max-height:80vh; overflow-y:auto;">
+<!-- Модалка выбора предмета -->
+<div id="modal-select" class="modal-overlay">
+  <div class="modal" style="max-height:80vh; display: flex; flex-direction: column;">
     <button class="close-modal" onclick="closeModal('modal-select')">×</button>
-    <h3 id="selectModalTitle">Выберите предмет</h3>
-    <div id="selectList" style="margin-top:20px; display:flex; flex-direction:column; gap:10px;"></div>
+    <h3 id="selectModalTitle" style="margin-bottom: 20px;">Выберите предмет</h3>
+    <div id="selectList" style="overflow-y: auto; padding-right: 5px;"></div>
   </div>
 </div>
 
@@ -341,54 +395,42 @@
 
 <script>
   /* ---------- ДАННЫЕ ИГРЫ ---------- */
-  let balance = 1000; // Стартовые кнопки
-  let inventory = []; // {id, name, icon, price, uid}
+  let balance = 1500; // Стартовые кнопки
+  let inventory = []; 
   
-  // Категории и кейсы
-  const caseCategories = {
-    "Стартовые": [
-      { id: 'c1', name: "Пакет Новичка", price: 50, items: [{n:"Ржавая кнопка", i:"🔘", p:10}, {n:"Скрепка", i:"📎", p:20}, {n:"Батарейка", i:"🔋", p:40}, {n:"Изолента", i:"🧻", p:80}] },
-      { id: 'c2', name: "Первый шаг", price: 100, items: [{n:"Гаечный ключ", i:"🔧", p:30}, {n:"Молоток", i:"🔨", p:60}, {n:"Отвертка", i:"🪛", p:120}, {n:"Дрель", i:"🪚", p:250}] },
-      { id: 'c3', name: "База", price: 200, items: [{n:"Кирпич", i:"🧱", p:50}, {n:"Цемент", i:"🏗️", p:100}, {n:"Каска", i:"⛑️", p:200}, {n:"Чертеж", i:"📜", p:450}] },
-      { id: 'c4', name: "Удача", price: 150, items: [{n:"Клевер", i:"🍀", p:40}, {n:"Подкова", i:"🧲", p:90}, {n:"Кристалл", i:"🔮", p:180}, {n:"Амулет", i:"📿", p:350}] }
-    ],
-    "Микс": [
-      { id: 'c5', name: "Всё подряд", price: 300, items: [{n:"Пицца", i:"🍕", p:80}, {n:"Сосиска", i:"🌭", p:150}, {n:"Ноутбук", i:"💻", p:300}, {n:"Телефон", i:"📱", p:600}] },
-      { id: 'c6', name: "Хаос", price: 400, items: [{n:"Кактус", i:"🌵", p:100}, {n:"Гриб", i:"🍄", p:200}, {n:"Ракета", i:"🚀", p:500}, {n:"НЛО", i:"🛸", p:900}] },
-      { id: 'c7', name: "Микс Мастер", price: 500, items: [{n:"Кот", i:"🐱", p:120}, {n:"Собака", i:"🐶", p:250}, {n:"Лев", i:"🦁", p:600}, {n:"Дракон", i:"🐉", p:1200}] },
-      { id: 'c8', name: "Случайность", price: 350, items: [{n:"Кубик", i:"🎲", p:90}, {n:"Карта", i:"🃏", p:180}, {n:"Шахматы", i:"♟️", p:400}, {n:"Корона", i:"👑", p:850}] }
-    ],
-    "Премиум": [
-      { id: 'c9', name: "Золотой", price: 1000, items: [{n:"Слиток", i:"🥇", p:300}, {n:"Часы", i:"⌚", p:700}, {n:"Машина", i:"🚗", p:1500}, {n:"Дом", i:"🏠", p:3000}] },
-      { id: 'c10', name: "Платина", price: 1500, items: [{n:"Алмаз", i:"💎", p:400}, {n:"Рубин", i:"❤️", p:900}, {n:"Яхта", i:"⛵", p:2000}, {n:"Остров", i:"🏝️", p:4500}] },
-      { id: 'c11', name: "VIP", price: 2000, items: [{n:"Вертолет", i:"🚁", p:600}, {n:"Самолет", i:"✈️", p:1200}, {n:"Космос", i:"🌌", p:2500}, {n:"Планета", i:"🪐", p:5500}] },
-      { id: 'c12', name: "Элита", price: 2500, items: [{n:"Статуя", i:"🗿", p:700}, {n:"Картина", i:"🖼️", p:1400}, {n:"Замок", i:"🏰", p:3000}, {n:"Галактика", i:"🌠", p:7000}] }
-    ],
-    "Лимитированные": [
-      { id: 'c13', name: "Зима 2024", price: 3000, items: [{n:"Снеговик", i:"⛄", p:800}, {n:"Елка", i:"🎄", p:1600}, {n:"Олень", i:"🦌", p:3500}, {n:"Санты", i:"🎅", p:8000}] },
-      { id: 'c14', name: "Кибер", price: 3500, items: [{n:"Чип", i:"💾", p:900}, {n:"Робот", i:"🤖", p:1800}, {n:"Киберпанк", i:"🦾", p:4000}, {n:"Матрица", i:"🕶️", p:9000}] },
-      { id: 'c15', name: "Спорт", price: 2800, items: [{n:"Мяч", i:"⚽", p:700}, {n:"Кубок", i:"🏆", p:1500}, {n:"Медаль", i:"🥇", p:3200}, {n:"Стадион", i:"🏟️", p:7500}] },
-      { id: 'c16', name: "Музыка", price: 3200, items: [{n:"Нота", i:"🎵", p:850}, {n:"Гитара", i:"🎸", p:1700}, {n:"Пианино", i:"🎹", p:3800}, {n:"Микрофон", i:"🎤", p:8500}] }
-    ],
-    "Эксклюзивные": [
-      { id: 'c17', name: "Богатство", price: 10000, items: [{n:"Мешок денег", i:"💰", p:2500}, {n:"Банк", i:"🏦", p:5000}, {n:"Биткоин", i:"₿", p:12000}, {n:"Вселенная", i:"🌍", p:25000}] },
-      { id: 'c18', name: "Власть", price: 15000, items: [{n:"Скипетр", i:"🏺", p:4000}, {n:"Трон", i:"🪑", p:8000}, {n:"Корона Империи", i:"👑", p:18000}, {n:"Власть над миром", i:"🌐", p:40000}] },
-      { id: 'c19', name: "Секрет", price: 20000, items: [{n:"Ключ", i:"🗝️", p:5000}, {n:"Замок", i:"🔒", p:10000}, {n:"Секретный агент", i:"🕵️", p:22000}, {n:"Код от всего", i:"💻", p:50000}] },
-      { id: 'c20', name: "Semyon Drop", price: 50000, items: [{n:"Автограф Семёна", i:"✍️", p:12000}, {n:"Золотой Семён", i:"🗿", p:25000}, {n:"Бриллиантовый Семён", i:"💎", p:60000}, {n:"САМ СЕМЁН", i:"🤴", p:150000}] }
-    ]
-  };
+  // Только 2 кейса: Микс и Смесь
+  const casesData = [
+    { 
+      id: 'mix', 
+      name: "Микс Кейс", 
+      price: 300, 
+      img: "cases/mix.png",
+      items: [
+        {n:"Пицца", i:"gifts/pizza.png", e:"🍕", p:80}, 
+        {n:"Сосиска", i:"gifts/hotdog.png", e:"🌭", p:150}, 
+        {n:"Ноутбук", i:"gifts/laptop.png", e:"💻", p:300}, 
+        {n:"Телефон", i:"gifts/phone.png", e:"📱", p:600}
+      ] 
+    },
+    { 
+      id: 'smes', 
+      name: "Смесь Кейс", 
+      price: 450, 
+      img: "cases/smes.png",
+      items: [
+        {n:"Кот", i:"gifts/cat.png", e:"🐱", p:120}, 
+        {n:"Собака", i:"gifts/dog.png", e:"🐶", p:250}, 
+        {n:"Лев", i:"gifts/lion.png", e:"🦁", p:600}, 
+        {n:"Дракон", i:"gifts/dragon.png", e:"🐉", p:1200}
+      ] 
+    }
+  ];
 
-  let currentCategory = "Стартовые";
   let currentCase = null;
   let caseCount = 1;
   let wonItemsBuffer = [];
   let craftSlots = { items: [], btns: 0 };
   let upgradeItem = null;
-
-  // Генератор уникальных ID
-  function generateUID() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-  }
 
   /* ---------- СИСТЕМА ---------- */
   const $ = id => document.getElementById(id);
@@ -401,8 +443,7 @@
     const t = $('toast');
     t.innerText = msg;
     t.classList.add('show');
-    clearTimeout(t._timeout);
-    t._timeout = setTimeout(() => t.classList.remove('show'), 2000);
+    setTimeout(() => t.classList.remove('show'), 2500);
   }
 
   function switchTab(tabId, btn) {
@@ -413,10 +454,20 @@
     
     if(tabId === 'inventory') renderInventory();
     if(tabId === 'cases') renderCases();
+    if(tabId === 'craft') renderCraftSlots();
   }
 
-  function closeModal(id) { $(id).classList.add('hidden'); }
-  function openModal(id) { $(id).classList.remove('hidden'); }
+  function closeModal(id) { $(id).classList.remove('open'); }
+  function openModal(id) { $(id).classList.add('open'); }
+
+  // Вспомогательная функция для отрисовки картинки или эмодзи
+  function getItemVisual(item, sizeClass = '') {
+    if(item.i && !item.i.startsWith('gifts/') === false) { // Если путь к картинке
+       // Проверка на существование файла сложна в JS без запроса, поэтому используем onerror в HTML
+       return `<img src="${item.i}" class="${sizeClass}" onerror="this.outerHTML='<span class=\\'${sizeClass === 'card-img' ? 'card-emoji' : 'r-emoji'}\\'>${item.e || '🎁'}</span>'">`;
+    }
+    return `<span class="${sizeClass === 'card-img' ? 'card-emoji' : 'r-emoji'}">${item.e || item.i || '🎁'}</span>`;
+  }
 
   /* ---------- ЗАСТАВКА И ЗВУК ---------- */
   const splashAudio = new Audio('drop.mp3');
@@ -426,51 +477,37 @@
   function startGame() {
     if(splash.classList.contains('fade')) return;
     
+    // Звук играет ДО КОНЦА, даже после скрытия заставки
     splashAudio.volume = 1.0;
-    splashAudio.play().catch(e => console.log("Audio play failed", e));
+    splashAudio.play().catch(e => console.log("Audio play blocked", e));
 
     splash.classList.add('fade');
     setTimeout(() => {
       splash.remove();
       app.classList.add('visible');
-      splashAudio.pause();
-      splashAudio.currentTime = 0;
-    }, 500);
+      // Звук НЕ останавливаем здесь! Он продолжит играть в фоне.
+    }, 800);
   }
 
   $('skipBtn').addEventListener('click', startGame);
-  splash.addEventListener('click', (e) => {
-    if(e.target !== $('skipBtn')) startGame();
-  });
 
   /* ---------- КЛИКЕР ---------- */
   $('clickBtn').addEventListener('click', () => {
     balance += 1;
     updateBalance();
-    const btn = $('clickBtn');
-    btn.style.transform = 'scale(0.95)';
-    setTimeout(() => btn.style.transform = 'scale(1)', 50);
   });
 
   /* ---------- КЕЙСЫ ---------- */
   function renderCases() {
-    const tabsContainer = $('caseTabs');
-    tabsContainer.innerHTML = '';
-    Object.keys(caseCategories).forEach(cat => {
-      const btn = document.createElement('div');
-      btn.className = `tab ${cat === currentCategory ? 'active' : ''}`;
-      btn.innerText = cat;
-      btn.onclick = () => { currentCategory = cat; renderCases(); };
-      tabsContainer.appendChild(btn);
-    });
-
     const grid = $('caseGrid');
     grid.innerHTML = '';
-    caseCategories[currentCategory].forEach(c => {
+    casesData.forEach(c => {
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
-        <span class="card-img">🎁</span>
+        <div class="card-img-container">
+          <img src="${c.img}" class="card-img" onerror="this.outerHTML='<span class=\'card-emoji\'>🎁</span>'">
+        </div>
         <div class="card-title">${c.name}</div>
         <div class="card-price">${c.price} 🔘</div>
         <button class="btn-primary" onclick="openCaseModal('${c.id}')">Открыть</button>
@@ -480,10 +517,7 @@
   }
 
   function openCaseModal(caseId) {
-    for(let cat in caseCategories) {
-      const found = caseCategories[cat].find(c => c.id === caseId);
-      if(found) { currentCase = found; break; }
-    }
+    currentCase = casesData.find(c => c.id === caseId);
     if(!currentCase) return;
 
     $('caseModalTitle').innerText = currentCase.name;
@@ -491,15 +525,21 @@
     $('caseResult').classList.add('hidden');
     setCaseCount(1);
     
+    // Подготовка рулетки
     const track = $('rouletteTrack');
     track.style.transition = 'none';
     track.style.transform = 'translateX(0)';
     track.innerHTML = '';
+    
+    // Генерируем ленту (50 элементов для анимации)
     for(let i=0; i<50; i++) {
       const item = currentCase.items[Math.floor(Math.random() * currentCase.items.length)];
       const div = document.createElement('div');
       div.className = 'roulette-item';
-      div.innerHTML = `<span>${item.i}</span><span style="font-size:10px; color:#888">${item.p}🔘</span>`;
+      div.innerHTML = `
+        ${getItemVisual(item, 'r-img')}
+        <span class="r-price">${item.p} 🔘</span>
+      `;
       track.appendChild(div);
     }
 
@@ -509,6 +549,19 @@
   function setCaseCount(n) {
     caseCount = n;
     $('caseTotalPrice').innerText = (currentCase.price * n).toLocaleString();
+    
+    // Подсветка кнопок
+    document.querySelectorAll('.count-btn').forEach((btn, idx) => {
+      if(idx + 1 === n) {
+        btn.style.background = 'var(--primary)';
+        btn.style.color = '#fff';
+        btn.style.borderColor = 'var(--primary)';
+      } else {
+        btn.style.background = 'var(--surface-hover)';
+        btn.style.color = '#fff';
+        btn.style.borderColor = 'var(--border)';
+      }
+    });
   }
 
   function spinRoulette() {
@@ -522,29 +575,39 @@
 
     $('caseControls').classList.add('hidden');
     
+    // Логика выигрыша
     wonItemsBuffer = [];
     for(let i=0; i<caseCount; i++) {
       const win = currentCase.items[Math.floor(Math.random() * currentCase.items.length)];
-      wonItemsBuffer.push({...win});
+      wonItemsBuffer.push({...win, uid: Date.now() + Math.random()});
     }
 
+    // Анимация
     const track = $('rouletteTrack');
-    const itemWidth = 100;
-    const stopPosition = (40 * itemWidth) - (track.parentElement.offsetWidth / 2) + (itemWidth/2);
+    const itemWidth = 110; // ширина .roulette-item
     
     if(caseCount === 1) {
+        // Добавляем выигрышный элемент в конец
         const winItem = wonItemsBuffer[0];
         const winDiv = document.createElement('div');
         winDiv.className = 'roulette-item';
-        winDiv.innerHTML = `<span>${winItem.i}</span><span style="font-size:10px; color:var(--accent)">${winItem.p}🔘</span>`;
-        winDiv.style.border = "2px solid var(--accent)";
+        winDiv.innerHTML = `
+          ${getItemVisual(winItem, 'r-img')}
+          <span class="r-price" style="color:var(--accent)">${winItem.p} 🔘</span>
+        `;
         track.appendChild(winDiv);
-        const finalStop = (track.children.length - 1) * itemWidth - (track.parentElement.offsetWidth / 2) + (itemWidth/2);
-        track.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0.1, 1)';
-        track.style.transform = `translateX(-${Math.max(0, finalStop)}px)`;
+        
+        const finalIndex = track.children.length - 1;
+        const containerWidth = track.parentElement.offsetWidth;
+        const finalStop = (finalIndex * itemWidth) - (containerWidth / 2) + (itemWidth / 2);
+        
+        track.style.transition = 'transform 4s cubic-bezier(0.15, 0, 0.15, 1)';
+        track.style.transform = `translateX(-${finalStop}px)`;
     } else {
-        track.style.transition = 'transform 4s cubic-bezier(0.1, 0, 0.1, 1)';
-        track.style.transform = `translateX(-${Math.max(0, stopPosition)}px)`;
+        // Для нескольких просто крутим на фиксированное расстояние
+        const stopPosition = (42 * itemWidth) - (track.parentElement.offsetWidth / 2) + (itemWidth/2);
+        track.style.transition = 'transform 4s cubic-bezier(0.15, 0, 0.15, 1)';
+        track.style.transform = `translateX(-${stopPosition}px)`;
     }
 
     setTimeout(() => {
@@ -561,8 +624,13 @@
     wonItemsBuffer.forEach(item => {
       totalWinPrice += item.p;
       const div = document.createElement('div');
-      div.style.cssText = "display:inline-block; margin:5px; text-align:center;";
-      div.innerHTML = `<div style="font-size:30px">${item.i}</div><div style="font-size:12px; color:var(--accent)">${item.p}🔘</div>`;
+      div.style.cssText = "text-align:center; background: var(--surface); padding: 15px; border-radius: 16px; border: 1px solid var(--border); min-width: 90px;";
+      div.innerHTML = `
+        <div style="height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+          ${getItemVisual(item, 'r-img')}
+        </div>
+        <div style="font-size:13px; font-weight:700; color:var(--accent)">${item.p} 🔘</div>
+      `;
       list.appendChild(div);
     });
 
@@ -570,18 +638,18 @@
   }
 
   function sellWonItems() {
-    const price = parseInt($('caseResult').dataset.totalPrice) || 0;
+    const price = parseInt($('caseResult').dataset.totalPrice);
     balance += price;
     updateBalance();
-    showToast(`Продано за ${price} кнопок!`);
+    showToast(`Продано за ${price.toLocaleString()} кнопок!`);
     closeModal('modal-case');
   }
 
   function keepWonItems() {
     wonItemsBuffer.forEach(item => {
-      inventory.push({...item, uid: generateUID()});
+      inventory.push(item);
     });
-    showToast("Предметы в инвентаре!");
+    showToast("Предметы добавлены в инвентарь!");
     closeModal('modal-case');
   }
 
@@ -599,10 +667,12 @@
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
-        <span class="card-img">${item.i}</span>
+        <div class="card-img-container">
+          ${getItemVisual(item, 'card-img')}
+        </div>
         <div class="card-title">${item.n}</div>
         <div class="card-price">${item.p} 🔘</div>
-        <button class="btn-primary btn-secondary" style="padding:8px; font-size:12px;" onclick="sellInventoryItem(${index})">Продать</button>
+        <button class="btn-primary btn-secondary" style="padding:10px; font-size:12px; margin-top:12px;" onclick="sellInventoryItem(${index})">Продать</button>
       `;
       grid.appendChild(card);
     });
@@ -617,23 +687,20 @@
     showToast(`Продано: ${item.n}`);
   }
 
-  /* ---------- КРАФТ - ИСПРАВЛЕНА ЛОГИКА ---------- */
+  /* ---------- КРАФТ ---------- */
   function addToCraft(type) {
     if(type === 'item') {
       if(craftSlots.items.length >= 4) return showToast("Максимум 4 предмета");
       if(inventory.length === 0) return showToast("Инвентарь пуст");
       
       openSelectModal('Выберите предмет для крафта', inventory, (item, idx) => {
-        // ИСПРАВЛЕНО: удаляем предмет из инвентаря при добавлении в крафт
-        const removedItem = inventory.splice(idx, 1)[0];
-        craftSlots.items.push(removedItem);
+        // Удаляем из инвентаря сразу
+        inventory.splice(idx, 1);
+        craftSlots.items.push(item);
         renderCraftSlots();
         closeModal('modal-select');
       });
     } else if(type === 'btn') {
-      // ИСПРАВЛЕНО: добавлена проверка максимума слотов
-      if(craftSlots.btns >= 3) return showToast("Максимум 3 слота кнопок");
-      
       const cost = 100;
       if(balance < cost) return showToast("Нужно 100 кнопок за слот");
       balance -= cost;
@@ -649,15 +716,13 @@
     for(let i=0; i<4; i++) {
       const slot = document.createElement('div');
       if(craftSlots.items[i]) {
-        const currentItem = craftSlots.items[i];
         slot.className = 'slot filled';
-        slot.innerHTML = currentItem.i;
-        // ИСПРАВЛЕНО: при клике возвращаем предмет в инвентарь
+        slot.innerHTML = getItemVisual(craftSlots.items[i], '');
         slot.onclick = () => { 
-          inventory.push(currentItem);
-          const idx = craftSlots.items.indexOf(currentItem);
-          if(idx > -1) craftSlots.items.splice(idx, 1);
-          renderCraftSlots();
+            // Возвращаем в инвентарь при клике
+            inventory.push(craftSlots.items[i]);
+            craftSlots.items.splice(i, 1);
+            renderCraftSlots();
         };
       } else {
         slot.className = 'slot';
@@ -689,43 +754,38 @@
     }
 
     let totalVal = craftSlots.items.reduce((sum, it) => sum + it.p, 0) + (craftSlots.btns * 100);
-    $('craftCost').innerText = totalVal + " 🔘";
+    $('craftCost').innerText = totalVal.toLocaleString() + " 🔘";
   }
 
   function clearCraft() {
-    // ИСПРАВЛЕНО: возвращаем предметы в инвентарь и деньги за кнопки
-    craftSlots.items.forEach(it => {
-      inventory.push(it);
-    });
+    craftSlots.items.forEach(it => inventory.push(it));
     balance += craftSlots.btns * 100;
-    updateBalance();
-    
     craftSlots = { items: [], btns: 0 };
+    updateBalance();
     renderCraftSlots();
-    showToast("Крафт очищен");
+    showToast("Слоты очищены");
   }
 
   function runCraft() {
-    if(craftSlots.items.length === 0 && craftSlots.btns === 0) return showToast("Пусто!");
+    if(craftSlots.items.length === 0 && craftSlots.btns === 0) return showToast("Добавьте ингредиенты!");
     
     const totalVal = craftSlots.items.reduce((sum, it) => sum + it.p, 0) + (craftSlots.btns * 100);
+    const multiplier = Math.random() * 2.2; // Шанс на профит
+    const resultPrice = Math.floor(totalVal * multiplier);
     
-    const multiplier = Math.random() * 2; 
-    const resultPrice = Math.max(1, Math.floor(totalVal * multiplier));
-    
-    // ИСПРАВЛЕНО: предметы уже удалены из инвентаря при добавлении, просто очищаем слоты
     const newItem = {
-      n: "Скрафченный лут",
-      i: "✨",
-      p: resultPrice,
-      uid: generateUID()
+        n: "Скрафченный лут",
+        i: "gifts/craft.png", // Можно добавить картинку
+        e: "✨",
+        p: resultPrice,
+        uid: Date.now()
     };
     
     inventory.push(newItem);
     craftSlots = { items: [], btns: 0 };
     renderCraftSlots();
     
-    showToast(`Крафт завершен! Получено: ${resultPrice} 🔘`);
+    showToast(`Крафт завершен! Получено: ${resultPrice.toLocaleString()} 🔘`);
     switchTab('inventory', document.querySelectorAll('.nav-item')[4]);
   }
 
@@ -734,7 +794,7 @@
     if(inventory.length === 0) return showToast("Инвентарь пуст");
     openSelectModal('Выберите предмет для апгрейда', inventory, (item, idx) => {
       upgradeItem = {...item, invIndex: idx};
-      $('upgradeCenter').innerHTML = `<span style="font-size:40px">${item.i}</span>`;
+      $('upgradeCenter').innerHTML = getItemVisual(item, '');
       calculateUpgradeChance();
       closeModal('modal-select');
       $('upgradeBtn').disabled = false;
@@ -750,8 +810,9 @@
     $('upgradeChance').innerText = Math.floor(chance) + '%';
     
     const targetPrice = Math.floor(upgradeItem.p * mult);
-    $('upgradeTarget').innerText = `Цель: ${targetPrice} 🔘 (x${mult})`;
+    $('upgradeTarget').innerHTML = `Цель: <span style="color:var(--accent)">${targetPrice.toLocaleString()} 🔘</span> (x${mult})`;
     
+    $('upgradeProgress').style.transition = 'none';
     $('upgradeProgress').style.transform = `rotate(0deg)`;
   }
 
@@ -768,7 +829,7 @@
     
     const progress = $('upgradeProgress');
     const rotation = isWin ? 360 * 5 + 180 : 360 * 2 + (Math.random() * 300);
-    progress.style.transition = 'transform 2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    progress.style.transition = 'transform 2.5s cubic-bezier(0.2, 0.8, 0.2, 1)';
     progress.style.transform = `rotate(${rotation}deg)`;
     
     setTimeout(() => {
@@ -780,15 +841,16 @@
         const newItem = {
             n: upgradeItem.n + " (UP)",
             i: upgradeItem.i,
+            e: upgradeItem.e,
             p: newPrice,
-            uid: generateUID()
+            uid: Date.now()
         };
         inventory.push(newItem);
-        showToast(`УСПЕХ! Новый предмет: ${newPrice} 🔘`);
-        $('upgradeCenter').innerHTML = `<span style="font-size:40px; color:var(--accent)">${newItem.i}</span>`;
+        showToast(`УСПЕХ! Новый предмет: ${newPrice.toLocaleString()} 🔘`);
+        $('upgradeCenter').innerHTML = `<div style="color:var(--success); font-size: 40px;">${getItemVisual(newItem, '')}</div>`;
       } else {
         showToast("НЕУДАЧА! Предмет сломан.");
-        $('upgradeCenter').innerHTML = `<span style="font-size:40px; color:#555">💥</span>`;
+        $('upgradeCenter').innerHTML = `<span style="font-size:50px; color:var(--danger)">💥</span>`;
       }
       
       upgradeItem = null;
@@ -797,11 +859,11 @@
       setTimeout(() => {
          progress.style.transition = 'none';
          progress.style.transform = `rotate(0deg)`;
-         $('upgradeCenter').innerHTML = `<span style="font-size:12px; color:#666">Шанс</span><span id="upgradeChance" style="font-size:24px; font-weight:bold;">0%</span>`;
+         $('upgradeCenter').innerHTML = `<span style="font-size:12px; color:var(--text-sec); text-transform: uppercase; letter-spacing: 1px;">Шанс</span><span id="upgradeChance" style="font-size:28px; font-weight:800; margin-top: 5px;">0%</span>`;
          $('upgradeTarget').innerText = "Цель: ---";
       }, 2000);
 
-    }, 2000);
+    }, 2500);
   }
 
   /* ---------- ОБЩАЯ МОДАЛКА ВЫБОРА ---------- */
@@ -810,14 +872,16 @@
     const container = $('selectList');
     container.innerHTML = '';
     
-    if(list.length === 0) {
-        container.innerHTML = '<div style="color:#666">Пусто</div>';
-    }
-
     list.forEach((item, idx) => {
       const row = document.createElement('div');
-      row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#222; padding:10px; border-radius:10px; cursor:pointer;";
-      row.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><span style="font-size:24px">${item.i}</span> <span>${item.n}</span></div> <span style="color:var(--accent)">${item.p}🔘</span>`;
+      row.className = 'select-row';
+      row.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+          ${getItemVisual(item, 'emoji')}
+          <span style="font-weight: 600;">${item.n}</span>
+        </div> 
+        <span style="color:var(--accent); font-weight: 700;">${item.p} 🔘</span>
+      `;
       row.onclick = () => callback(item, idx);
       container.appendChild(row);
     });
@@ -828,6 +892,7 @@
   // Init
   updateBalance();
   renderCases();
+  renderCraftSlots();
 
 </script>
 </body>
